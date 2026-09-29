@@ -8,7 +8,7 @@ public class CardVisual : MonoBehaviour
     [SerializeField] private TMP_Text suitText;
     [SerializeField] private TMP_Text valueText;
 
-    public void Initialize(CardData data) {
+    public void Initialize(ref CardData data) {
         string suitString = data.suit.ToString();
         string valueString = data.value.ToString();
 

@@ -7,21 +7,23 @@ public class GameManager : MonoBehaviour
     [SerializeField] private Transform handLayoutGroup;
     private Transform tempTransform;
 
-    private CardData[] deck = new CardData[52];
+    private CardData[] baseDeck = new CardData[52];
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         tempTransform = new GameObject("temp").transform;
-        CreateDefaultDeck(ref deck);
-        SpawnCard(deck[0]);
+        CreateDefaultDeck(ref baseDeck);
+        System.Random rand = new System.Random();
+        int cardNum = rand.Next(0,52);
+    
+        SpawnCard(baseDeck[cardNum]);
     }
 
     private void SpawnCard(CardData data){
         GameObject newCard = Instantiate(cardPrefab, tempTransform);
         CardVisual visual = newCard.GetComponent<CardVisual>();
-        
-        visual.Initialize(data);
+        visual.Initialize(ref data);
     }
 
     private bool CreateDefaultDeck(ref CardData[] newDeck){
@@ -37,6 +39,17 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
+    private bool ShuffleDeck(ref CardData[] deck){
+        // create temp deck of size of deck
+
+        // select random card from input deck and put it into each slot sequentially       
+
+        // overwrite each slot in input deck with temp deck
+        
+        return true;
+    }
+
+
     // Update is called once per frame
     void Update()
     {
@@ -47,6 +60,7 @@ public class GameManager : MonoBehaviour
 public struct CardData {
     public int value;
     public CardSuit suit;
+    public Transform transform;
 }
 
 public enum CardSuit {
