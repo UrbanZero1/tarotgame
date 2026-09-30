@@ -18,6 +18,8 @@ public class GameManager : MonoBehaviour
         int cardNum = rand.Next(0,52);
     
         SpawnCard(baseDeck[cardNum]);
+
+        ShuffleDeck(ref baseDeck);
     }
 
     private void SpawnCard(CardData data){
@@ -41,11 +43,46 @@ public class GameManager : MonoBehaviour
 
     private bool ShuffleDeck(ref CardData[] deck){
         // create temp deck of size of deck
+        int deckSize = deck.Length;
+        CardData[] tempDeck = new CardData[deckSize];
+
+        Debug.Log(deck);
+
+        System.Random rand = new System.Random();
+
 
         // select random card from input deck and put it into each slot sequentially       
+        for (int i = 0; i < deckSize; i++)
+        {
+            int randomIndex = 0;
+            bool isDuplicate = true;
 
-        // overwrite each slot in input deck with temp deck
-        
+            //check if the card is already in the temp deck, if so
+           //pick another random card until a unique card is found
+            while (isDuplicate)
+            {
+                randomIndex = rand.Next(0, deckSize);
+                isDuplicate = false;
+
+
+                for (int j = 0; j < i; j++)
+                {
+                    if (deck[randomIndex].value == tempDeck[j].value && deck[randomIndex].suit == tempDeck[j].suit)
+                    {
+                        isDuplicate = true;
+                        break;
+                    }
+                }
+            }
+
+          
+                    tempDeck[i] = deck[randomIndex];
+
+        }
+
+        // replace the original deck with the shuffled temp deck
+        deck = tempDeck;
+        Debug.Log(deck);
         return true;
     }
 
