@@ -8,11 +8,19 @@ public class CardVisual : MonoBehaviour
     [SerializeField] private TMP_Text suitText;
     [SerializeField] private TMP_Text valueText;
 
-    public void Initialize(ref CardData data) {
-        string suitString = data.suit.ToString();
-        string valueString = data.value.ToString();
+    private CardData cardData;
+    public CardData CardData => cardData;
 
-        suitText.text = suitString;
-        valueText.text = valueString;
+    public void Initialize(CardData data) {
+        cardData = data;
+        UpdateVisuals();
+    }
+
+    public void UpdateVisuals(){
+        if (cardData == null)
+            return;
+
+        suitText.text = cardData.suit.ToString();
+        valueText.text = cardData.value.ToString();
     }
 }
