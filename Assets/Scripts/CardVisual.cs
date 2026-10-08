@@ -37,8 +37,6 @@ public class CardVisual : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
         if (!IsValid()) return;
 
         CardData card = cards[cardId];
-
-        IsInteractable = card.zone == CardZone.PLAYER;
         
         if (card.facedown) {
             suitText.text = "";
@@ -59,14 +57,12 @@ public class CardVisual : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
     }
     
     public void OnPointerDown(PointerEventData eventData) {
-        if (!IsInteractable) return;
         
         if (eventData.button == PointerEventData.InputButton.Left)
             PointerPressed?.Invoke(cardId);
     }
     
     public void OnPointerUp(PointerEventData eventData) {
-        if (!IsInteractable) return;
         
         if (eventData.button == PointerEventData.InputButton.Left)
             PointerReleased?.Invoke(cardId);
