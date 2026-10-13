@@ -200,7 +200,7 @@ public class GameManager : MonoBehaviour
             case GameState.PLAY:
                 switch (gameData.turnState) {
                     case TurnStates.REPLACE:
-                        if (cards[cardId].zone == CardZone.PLAYER) {
+                        if (cards[cardId].zone == GetCurrentPlayerZone()) {
                             if (gameData.cardsSelected.Count < 1) {
                                 gameData.cardsSelected.Add(cardId);
                             }
