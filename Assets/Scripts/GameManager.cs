@@ -1,7 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
-using UnityEditor.U2D;
+//using UnityEditor.U2D;
 using UnityEngine.PlayerLoop;
 
 public class GameManager : MonoBehaviour
