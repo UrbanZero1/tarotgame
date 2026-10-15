@@ -1,18 +1,25 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
+using UnityEngine.UI;
 
 public class CasinoManager : MonoBehaviour
 {
+    
+    [SerializeField] private Transform floorsBtnContainer;
+    [SerializeField] private GameObject elevatorMenu;
+    [SerializeField] private GameObject floorButtonPrefab;
+
+    //[SerializeField] private GameObject closeBtn;
+
     private int currentFloor = -1;
 
-    private bool canGoUp = false;
-    private bool canGoDown = false;
 
     private string[] floorScenes =
     {
         "Lobby",
         "Floor_1",
-        //"Floor_2",
+        "Floor_2",
         //"Floor_3"
     };
 
@@ -30,60 +37,54 @@ public class CasinoManager : MonoBehaviour
             }
         }
 
+        for (int i = 0; i < floorScenes.Length; i++)
+        {
+            GameObject newBtn = Instantiate(floorButtonPrefab, floorsBtnContainer);
+
+            TextMeshProUGUI btnText = newBtn.GetComponentInChildren<TextMeshProUGUI>();
+            btnText.text = floorScenes[i];
+
+            Button btn = newBtn.GetComponent<Button>();
+            int floorIndex = i; // Capture the current value of i
+            btn.onClick.AddListener(() => GoToFloor(floorIndex));
+
+            if(i == currentFloor)
+            {
+                btn.interactable = false; // Disable the button for the current floor
+                btnText.color = Color.gray; // Change the text color to indicate it's disabled
+            }
+        }
+
         // Make sure this scene actually exists in our floor list
         if (currentFloor == -1)
         {
             Debug.LogError("Current scene is not in the floorScenes array.");
             return;
         }
-
-        // Work out which directions are available
-        canGoUp = currentFloor + 1 < floorScenes.Length;
-        canGoDown = currentFloor - 1 >= 0;
-
-        Debug.Log(
-            "Current Floor: " + currentFloor +
-            " | Can Go Up: " + canGoUp +
-            " | Can Go Down: " + canGoDown
-        );
+        
+    }
+    public void GoToFloor(int floor)
+    {
+        SceneManager.LoadScene(floorScenes[floor]);
     }
 
     public void UseElevator()
     {
-        // Lobby
-        if (canGoUp && !canGoDown)
-        {
-            GoUp();
-        }
-
-        // Highest floor
-        else if (!canGoUp && canGoDown)
-        {
-            GoDown();
-        }
-
-        // Middle floor
-        else if (canGoUp && canGoDown)
-        {
-            // TEMPORARY:
-            // Go up until we create the elevator menu.
-            GoUp();
-        }
+       elevatorMenu.SetActive(true);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
     }
 
-    public void GoUp()
+
+
+
+
+    public void closeMenu()
     {
-        if (canGoUp)
-        {
-            SceneManager.LoadScene(floorScenes[currentFloor + 1]);
-        }
+        elevatorMenu.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
-    public void GoDown()
-    {
-        if (canGoDown)
-        {
-            SceneManager.LoadScene(floorScenes[currentFloor - 1]);
-        }
-    }
+     
 }

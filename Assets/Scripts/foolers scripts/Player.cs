@@ -18,6 +18,7 @@ public class Player : MonoBehaviour
     [Header("Interaction")]
     [SerializeField] private InputActionReference interactAction;
     [SerializeField] private float interactionDistance = 3f;
+    [SerializeField] private GameObject interactionPrompt;
 
     private float cameraPitch = 0f;
 
@@ -31,6 +32,8 @@ public class Player : MonoBehaviour
         // Lock cursor for first-person camera
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        GameObject.Find("InteractionPrompt");
     }
 
     void Update()
@@ -70,6 +73,7 @@ public class Player : MonoBehaviour
 
     private void CheckInteraction()
     {
+         interactionPrompt.SetActive(false);
         Debug.DrawRay(
             playerCamera.position,
             playerCamera.forward * interactionDistance,
@@ -82,7 +86,9 @@ public class Player : MonoBehaviour
             out RaycastHit hit,
             interactionDistance))
         {
-            Debug.Log("Ray hit: " + hit.transform.name);
+            //Debug.Log("Ray hit: " + hit.transform.name);
+      
+
 
             Transform hitObject = hit.transform;
 
@@ -91,6 +97,7 @@ public class Player : MonoBehaviour
             if (hitObject.CompareTag("Elevator"))
             {
                 lookingAtElevator = true;
+
             }
             else if (hitObject.parent != null &&
                      hitObject.parent.CompareTag("Elevator"))
@@ -101,6 +108,9 @@ public class Player : MonoBehaviour
             if (lookingAtElevator)
             {
                 Debug.Log("LOOKING AT ELEVATOR");
+
+                interactionPrompt.SetActive(true);
+
 
                 if (interactAction.action.WasPressedThisFrame())
                 {
