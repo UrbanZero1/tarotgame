@@ -28,8 +28,8 @@ Transform:
   m_GameObject: {fileID: 985900688046419835}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -6.5, y: 1.1, z: 7.3}
-  m_LocalScale: {x: 0.2, y: 2.2, z: 0.2}
+  m_LocalPosition: {x: -6.1, y: 1.5, z: 7.3}
+  m_LocalScale: {x: 0.2, y: 3, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1137894194936321118}
@@ -140,8 +140,8 @@ Transform:
   m_GameObject: {fileID: 1053750210222478242}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7.5, y: 2.1, z: 7.3}
-  m_LocalScale: {x: 2.2, y: 0.2, z: 0.2}
+  m_LocalPosition: {x: -7.5, y: 3, z: 7.3}
+  m_LocalScale: {x: 3, y: 0.2, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1137894194936321118}
@@ -252,8 +252,8 @@ Transform:
   m_GameObject: {fileID: 1581803652365151219}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8.5, y: 1.1, z: 7.3}
-  m_LocalScale: {x: 0.2, y: 2.2, z: 0.2}
+  m_LocalPosition: {x: -8.9, y: 1.5, z: 7.3}
+  m_LocalScale: {x: 0.2, y: 3, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1137894194936321118}
@@ -364,8 +364,8 @@ Transform:
   m_GameObject: {fileID: 1882299450349614139}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -7, y: 1, z: 7.3}
-  m_LocalScale: {x: 1, y: 2, z: 0.1}
+  m_LocalPosition: {x: -6.8, y: 1.5, z: 7.3}
+  m_LocalScale: {x: 1.4, y: 3, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3471556783805648175}
@@ -476,8 +476,8 @@ Transform:
   m_GameObject: {fileID: 2398713464694981856}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -8, y: 1, z: 7.3}
-  m_LocalScale: {x: 1, y: 2, z: 0.1}
+  m_LocalPosition: {x: -8.2, y: 1.5, z: 7.3}
+  m_LocalScale: {x: 1.4, y: 3, z: 0.1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 3471556783805648175}
