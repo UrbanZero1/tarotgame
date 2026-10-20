@@ -46,6 +46,35 @@ public class GameManager : MonoBehaviour
         uiData.UI.Clicked += OnButtonClicked;
         GameStart();
     }
+    
+    void Restart() {
+        cards = new CardData[MAX_CARDS];
+        CreateDefaultDeck(ref cards);
+        ResetZones();
+        DestroyCards();
+        PopulateDeckZone();
+        ShuffleZone(CardZone.DECK);
+        GameStart();
+    }
+    
+    void DestroyCards() {
+        for (int i = 0; i < cardVisuals.Length; i++) {
+            if (cardVisuals[i] != null) {
+                Destroy(cardVisuals[i].gameObject);
+                cardVisuals[i] = null;
+            }
+        }
+    }
+
+    void ResetZones() {
+        for (int i = 0; i < zones.Length; i++) {
+            zones[i].count = 0;
+            zones[i].dirty = true;
+            for (int j = 0; j < zones[i].cardIds.Length; j++) {
+                zones[i].cardIds[i] = INVALID_CARD_ID;
+            }
+        }
+    }
 
     /*
      * RULES OF THE GAME
@@ -232,6 +261,16 @@ public class GameManager : MonoBehaviour
                 gameData.cardsSelected = new List<int>();
                 gameData.turnState = TurnStates.REPLACE;
                 uiData.dirty = true;
+                break;
+            case ButtonCommands.RESTART:
+                Restart();
+                break;
+            case ButtonCommands.EXIT:
+                #if UNITY_EDITOR
+                UnityEditor.EditorApplication.isPlaying = false;
+                #else
+                Application.Quit();
+                #endif
                 break;
         }
     }
@@ -485,6 +524,7 @@ public class GameManager : MonoBehaviour
             case GameState.START:
                 switch (_handStartData.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
+                        uiData.UI.DisableAllButtons();
                         uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {gameData.handsRemaining}");
                         uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
                         uiData.UI.UpdatePointsGoalText($"Goal: {gameData.pointsGoal}");
@@ -539,6 +579,8 @@ public class GameManager : MonoBehaviour
                     uiData.UI.UpdateMiddleText(gameData.currentPoints >= pointsGoal
                         ? $"You Win! Final Score: {gameData.currentPoints}"
                         : $"Game Over! Final Score: {gameData.currentPoints}");
+                    uiData.UI.EnableRestartButton(true);
+                    uiData.UI.EnableExitButton(true);
                     break;
         }
     }
@@ -666,13 +708,13 @@ public class GameManager : MonoBehaviour
                         break;
                     case TurnStates.CALCULATE_HAND:
                         if (Time.time >= gameData.waitUntil) {
+                            gameData.handsRemaining--;
                             gameData.currentPoints += CalculateZonePoints(CardZone.PLAYER);
                             uiData.dirty = true;
                             if (gameData.currentPoints >= gameData.pointsGoal) {
                                 gameData.state = GameState.END;
                             }
                             else {
-                                gameData.handsRemaining--;
                                 if (gameData.handsRemaining > 0) {
                                     SetAllCardsInZoneFaceDown(CardZone.PLAYER, true);
                                     DiscardAllCardsInZone(CardZone.PLAYER);

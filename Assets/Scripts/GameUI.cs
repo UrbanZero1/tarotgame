@@ -14,6 +14,8 @@ public class GameUI : MonoBehaviour {
     [SerializeField] private Button discardButton;
     [SerializeField] private Button replaceButton;
     [SerializeField] private Button passButton;
+    [SerializeField] private Button restartButton;
+    [SerializeField] private Button exitButton;
     
     public event System.Action<ButtonCommands> Clicked;
     
@@ -27,6 +29,8 @@ public class GameUI : MonoBehaviour {
         discardButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.DISCARD));
         replaceButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.REPLACE));
         passButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PASS));
+        restartButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.RESTART));
+        exitButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.EXIT));
     }
 
     public void UpdateMiddleText(string text) {
@@ -61,6 +65,14 @@ public class GameUI : MonoBehaviour {
         replaceButton.gameObject.SetActive(enable);
     }
     
+    public void EnableRestartButton(bool enable) {
+        restartButton.gameObject.SetActive(enable);
+    }
+    
+    public void EnableExitButton(bool enable) {
+        exitButton.gameObject.SetActive(enable);
+    }
+    
     public void EnablePassButton(bool enable) {
         passButton.gameObject.SetActive(enable);
     }
@@ -70,6 +82,8 @@ public class GameUI : MonoBehaviour {
         discardButton.gameObject.SetActive(false);
         replaceButton.gameObject.SetActive(false);
         passButton.gameObject.SetActive(false);
+        restartButton.gameObject.SetActive(false);
+        exitButton.gameObject.SetActive(false);
     }
     
     private void OnButtonClicked(ButtonCommands command) {

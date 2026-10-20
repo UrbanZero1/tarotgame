@@ -5,5 +5,6 @@ public enum ButtonCommands {
     REPLACE,
     DISCARD,
     PASS,
-    WORD
+    RESTART,
+    EXIT,
 }
