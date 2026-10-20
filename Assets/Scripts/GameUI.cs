@@ -1,35 +1,52 @@
 using UnityEngine;
 using TMPro;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 public class GameUI : MonoBehaviour {
     [Header("UI Components")] 
     [SerializeField] private TMP_Text middleText;
-    [SerializeField] private TMP_Text turnText;
+    [FormerlySerializedAs("turnText")] [SerializeField] private TMP_Text pointsGoalText;
+    [SerializeField] private TMP_Text playerPointsText;
+    [SerializeField] private TMP_Text handsRemainingText;
+    [SerializeField] private TMP_Text actionsRemainingText;
     [SerializeField] private Button drawButton;
     [SerializeField] private Button discardButton;
     [SerializeField] private Button replaceButton;
-    [SerializeField] private Button swapButton;
-    [SerializeField] private Button wordButton;
+    [SerializeField] private Button passButton;
     
     public event System.Action<ButtonCommands> Clicked;
     
     private void Awake() {
         UpdateMiddleText("");
-        UpdateTurnText("");
+        UpdatePointsGoalText("");
+        UpdatePlayerPointsText("");
+        UpdateActionsRemainingText("");
+        UpdateHandsRemainingText("");
         drawButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.DRAW));
         discardButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.DISCARD));
         replaceButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.REPLACE));
-        swapButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.SWAP));
-        wordButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.WORD));
+        passButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PASS));
     }
 
     public void UpdateMiddleText(string text) {
         middleText.text = text;
     }
 
-    public void UpdateTurnText(string text) {
-        turnText.text = text;
+    public void UpdatePointsGoalText(string text) {
+        pointsGoalText.text = text;
+    }
+    
+    public void UpdatePlayerPointsText(string text) {
+        playerPointsText.text = text;
+    }
+    
+    public void UpdateHandsRemainingText(string text) {
+        handsRemainingText.text = text;
+    }
+    
+    public void UpdateActionsRemainingText(string text) {
+        actionsRemainingText.text = text;
     }
     
     public void EnableDrawButton(bool enable) {
@@ -44,20 +61,15 @@ public class GameUI : MonoBehaviour {
         replaceButton.gameObject.SetActive(enable);
     }
     
-    public void EnableSwapButton(bool enable) {
-        swapButton.gameObject.SetActive(enable);
-    }
-    
-    public void EnableWordButton(bool enable) {
-        wordButton.gameObject.SetActive(enable);
+    public void EnablePassButton(bool enable) {
+        passButton.gameObject.SetActive(enable);
     }
 
     public void DisableAllButtons() {
         drawButton.gameObject.SetActive(false);
         discardButton.gameObject.SetActive(false);
         replaceButton.gameObject.SetActive(false);
-        swapButton.gameObject.SetActive(false);
-        wordButton.gameObject.SetActive(false);
+        passButton.gameObject.SetActive(false);
     }
     
     private void OnButtonClicked(ButtonCommands command) {

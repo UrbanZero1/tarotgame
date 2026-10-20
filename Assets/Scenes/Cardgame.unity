@@ -660,6 +660,38 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1230591973426516092, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1230591973426516092, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1230591973426516092, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1230591973426516092, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2779946519889853105, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2779946519889853105, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2779946519889853105, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2779946519889853105, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3577101344591808033, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -740,9 +772,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4120792876372183525, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4120792876372183525, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4120792876372183525, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4120792876372183525, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5950008052698384469, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
       propertyPath: m_Name
       value: GameUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 7765141577003877225, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7765141577003877225, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7765141577003877225, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7765141577003877225, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -858,24 +922,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
   holdDuration: 0.5
+  startingHands: 3
+  startingActions: 3
+  pointsGoal: 100
   zoneViews:
   - zone: 0
     anchor: {fileID: 397713157}
     layout: {fileID: 397713158}
   - zone: 1
-    anchor: {fileID: 2144716940}
-    layout: {fileID: 2144716941}
-  - zone: 2
     anchor: {fileID: 219278430}
     layout: {fileID: 0}
-  - zone: 3
+  - zone: 2
     anchor: {fileID: 215885038}
     layout: {fileID: 215885037}
-  - zone: 4
-    anchor: {fileID: 219278430}
-    layout: {fileID: 0}
-  - zone: 5
-    anchor: {fileID: 219278430}
+  - zone: 3
+    anchor: {fileID: 0}
     layout: {fileID: 0}
   cardPrefab: {fileID: 6362416994652406293, guid: 46cdf36a1c0337f43b7984af5e05b106, type: 3}
   uiObject: {fileID: 1019842354}
@@ -894,51 +955,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2144716939
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2144716940}
-  - component: {fileID: 2144716941}
-  m_Layer: 0
-  m_Name: EnemyHand
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2144716940
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2144716939}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.7071068, z: 0.7071068, w: 0}
-  m_LocalPosition: {x: 0, y: -3.2, z: 5.43}
-  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
-  m_ConstrainProportionsScale: 1
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 90, y: -180, z: 0}
---- !u!114 &2144716941
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2144716939}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5129a222b9a4d634294442e389cd7c77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HorizontalCardLayout
-  cardSpacing: 1.1
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -949,7 +965,6 @@ SceneRoots:
   - {fileID: 659502020}
   - {fileID: 397713157}
   - {fileID: 215885038}
-  - {fileID: 2144716940}
   - {fileID: 219278430}
   - {fileID: 1444528411}
   - {fileID: 1369372732}

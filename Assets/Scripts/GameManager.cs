@@ -9,8 +9,10 @@ public class GameManager : MonoBehaviour
     public const int MAX_CARDS = 52;
     private const int MAX_CARDS_PER_ZONE = MAX_CARDS;
     public const int INVALID_CARD_ID = -1;
-    const int PLAYERCOUNT = 2;
     [SerializeField] private float holdDuration = 0.5f; // Duration in seconds to trigger a hold event
+    [SerializeField] private int startingHands = 3;
+    [SerializeField] private int startingActions = 3;
+    [SerializeField] private int pointsGoal = 100;
 
 
     [Header("Zone Views")]
@@ -26,7 +28,7 @@ public class GameManager : MonoBehaviour
     private CardData[] cards = new CardData[MAX_CARDS];
     private CardInteractionData[] cardInteractions = new CardInteractionData[MAX_CARDS];
     private CardZoneData[] zones;
-    private GameStartData gameStartData;
+    private HandStartData _handStartData;
     public UIData uiData;
 
     private bool started = false;
@@ -51,18 +53,23 @@ public class GameManager : MonoBehaviour
      */
     private void GameStart() {
         DrawCards(CardZone.PLAYER, 5);
-        DrawCards(CardZone.ENEMY, 5);
         gameData.state = GameState.START;
-        gameData.currentPlayer = PlayerNames.PLAYER;
+        gameData.currentPoints = 0;
+        gameData.pointsGoal = pointsGoal;
         gameData.currentTurn = 0;
         gameData.cardsSelected = new List<int>();
-        gameStartData = new GameStartData {
-            playerSelectedCount = 0,
-            playerSelectedCards = new int[2],
-            state = GameStartState.WAITING_FOR_PLAYER_SELECTION
-        };
+        gameData.actionsRemaining = startingActions;
+        gameData.handsRemaining = startingHands;
+        _handStartData = new HandStartData{};
+        InitHandStartData(ref _handStartData);
         uiData.dirty = true;
         started = true;
+    }
+
+    private void InitHandStartData(ref HandStartData handStartData) {
+        handStartData.playerSelectedCount = 0;
+        handStartData.playerSelectedCards = new int[2];
+        handStartData.state = HandStartState.WAITING_FOR_PLAYER_SELECTION;
     }
 
     private void InitZones() {
@@ -180,17 +187,10 @@ public class GameManager : MonoBehaviour
 
         switch (gameData.state) {
             case GameState.START:
-                switch (gameStartData.state) {
-                    case GameStartState.WAITING_FOR_PLAYER_SELECTION:
+                switch (_handStartData.state) {
+                    case HandStartState.WAITING_FOR_PLAYER_SELECTION:
                         if (cards[cardId].facedown && cards[cardId].zone == CardZone.PLAYER) {
-                            gameStartData.playerSelectedCards[gameStartData.playerSelectedCount++] = cardId;
-                            cards[cardId].facedown = !cards[cardId].facedown;
-                            cards[cardId].visualDirty = true;
-                        }
-                        break;
-                    case GameStartState.WAITING_FOR_ENEMY_SELECTION:
-                        if (cards[cardId].facedown && cards[cardId].zone == CardZone.ENEMY) {
-                            gameStartData.playerSelectedCards[gameStartData.playerSelectedCount++] = cardId;
+                            _handStartData.playerSelectedCards[_handStartData.playerSelectedCount++] = cardId;
                             cards[cardId].facedown = !cards[cardId].facedown;
                             cards[cardId].visualDirty = true;
                         }
@@ -200,22 +200,11 @@ public class GameManager : MonoBehaviour
             case GameState.PLAY:
                 switch (gameData.turnState) {
                     case TurnStates.REPLACE:
-                        if (cards[cardId].zone == GetCurrentPlayerZone()) {
+                        if (cards[cardId].zone == CardZone.PLAYER) {
                             if (gameData.cardsSelected.Count < 1) {
                                 gameData.cardsSelected.Add(cardId);
                             }
                             gameData.cardsSelected[0] = cardId;
-                        }
-                        break;
-                    case TurnStates.SWAP:
-                        if (gameData.cardsSelected.Count < 1 && cards[cardId].zone == GetCurrentPlayerZone()) {
-                            gameData.cardsSelected.Add(cardId);
-                            cards[cardId].facedown = false;
-                            cards[cardId].visualDirty = true;
-                        } else if (gameData.cardsSelected.Count == 1 && cards[cardId].zone == GetCurrentPlayerZone(true)) {
-                            gameData.cardsSelected.Add(cardId);
-                            cards[cardId].facedown = false;
-                            cards[cardId].visualDirty = true;
                         }
                         break;
                 }
@@ -223,18 +212,11 @@ public class GameManager : MonoBehaviour
         }
     }
     
-    private CardZone GetCurrentPlayerZone(bool opposite = false) {
-        if (!opposite) {
-            return gameData.currentPlayer == PlayerNames.PLAYER ? CardZone.PLAYER : CardZone.ENEMY;
-        }
-        return gameData.currentPlayer == PlayerNames.PLAYER ? CardZone.ENEMY : CardZone.PLAYER;
-    }
-
     private void OnButtonClicked(ButtonCommands command) {
         switch (command) {
             case ButtonCommands.DRAW:
                 DrawCards(CardZone.PLAYER_DRAW, 1, false);
-                
+                gameData.actionsRemaining--;
                 gameData.turnState = TurnStates.DRAW;
                 uiData.dirty = true;
                 break;
@@ -242,17 +224,13 @@ public class GameManager : MonoBehaviour
                 gameData.turnState = TurnStates.DISCARD;
                 uiData.dirty = true;
                 break;
+            case ButtonCommands.PASS:
+                gameData.hasPassed = true;
+                gameData.turnState = TurnStates.END;
+                break;
             case ButtonCommands.REPLACE:
                 gameData.cardsSelected = new List<int>();
                 gameData.turnState = TurnStates.REPLACE;
-                uiData.dirty = true;
-                break;
-            case ButtonCommands.SWAP:
-                gameData.turnState = TurnStates.SWAP;
-                uiData.dirty = true;
-                break;
-            case ButtonCommands.WORD:
-                gameData.turnState = TurnStates.WORD;
                 uiData.dirty = true;
                 break;
         }
@@ -505,79 +483,63 @@ public class GameManager : MonoBehaviour
         uiData.dirty = false;
         switch (gameData.state) {
             case GameState.START:
-                switch (gameStartData.state) {
-                    case GameStartState.WAITING_FOR_PLAYER_SELECTION:
-                        uiData.UI.UpdateTurnText("Player Start");
+                switch (_handStartData.state) {
+                    case HandStartState.WAITING_FOR_PLAYER_SELECTION:
+                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {gameData.handsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
+                        uiData.UI.UpdatePointsGoalText($"Goal: {gameData.pointsGoal}");
+                        uiData.UI.UpdatePlayerPointsText($"Current Points: {gameData.currentPoints}");
                         uiData.UI.UpdateMiddleText("Select 2 cards to reveal");
                         break;
-                    case GameStartState.PLAYER_SELECTION_DONE:
+                    case HandStartState.PLAYER_SELECTION_DONE:
                         break;
-                    case GameStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
-                        break;
-                    case GameStartState.WAITING_FOR_ENEMY_SELECTION:
-                        uiData.UI.UpdateTurnText("Enemy Start");
-                        uiData.UI.UpdateMiddleText("Enemy, select 2 cards to reveal");
-                        break;
-                    case GameStartState.ENEMY_SELECTION_DONE:
-                        break;
-                    case GameStartState.WAITING_TO_HIDE_ENEMY_SELECTION:
+                    case HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
                         break;
                 }
                 break;
             case GameState.PLAY:
                 switch (gameData.turnState) {
                     case TurnStates.BEGIN:
-                        uiData.UI.UpdateTurnText($"{gameData.currentPlayer} Turn {gameData.currentTurn}");
+                        uiData.UI.UpdatePlayerPointsText($"Current Points: {gameData.currentPoints}");
                         uiData.UI.UpdateMiddleText("Select an action");
                         uiData.UI.EnableDrawButton(true);
-                        uiData.UI.EnableSwapButton(true);
-                        if (gameData.currentTurn >= 3) {
-                            uiData.UI.EnableWordButton(true);
-                        }
+                        uiData.UI.EnablePassButton(true);
                         break;
                     case TurnStates.DRAW:
                         uiData.UI.DisableAllButtons();
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Discard or Replace");
                         uiData.UI.EnableDiscardButton(true);
                         uiData.UI.EnableReplaceButton(true);
                         break;
                     case TurnStates.REPLACE:
                         uiData.UI.DisableAllButtons();
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Replace a card");
                         break;
                     case TurnStates.DISCARD:
                         uiData.UI.DisableAllButtons();
                         break;
-                    case TurnStates.SWAP:
+                    case TurnStates.CALCULATE_HAND:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateMiddleText("Choose a card to swap");
-                        break;
-                    case TurnStates.WORD:
-                        uiData.UI.DisableAllButtons();
+                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {gameData.handsRemaining}");
+                        int playerPoints = CalculateZonePoints(CardZone.PLAYER);
+                        string resultText = $"Hand Points: +{playerPoints}\n";
+                        uiData.UI.UpdateMiddleText(resultText);
+                        SetAllCardsInZoneFaceDown(CardZone.PLAYER, false);
                         break;
                     case TurnStates.END:
                         uiData.UI.DisableAllButtons();
                         break;
+                        
                 }
                 break;
             case GameState.END:
-                uiData.UI.DisableAllButtons();
-                uiData.UI.UpdateTurnText("Game Over");
-                int playerPoints = CalculateZonePoints(CardZone.PLAYER);
-                int enemyPoints = CalculateZonePoints(CardZone.ENEMY);
-                string resultText = $"Player Points: {playerPoints} Enemy Points: {enemyPoints}\n";
-                if (playerPoints > enemyPoints) {
-                    resultText += "Player Wins!";
-                } else if (playerPoints < enemyPoints) {
-                    resultText += "Enemy Wins!";
-                } else {
-                    resultText += "It's a Tie!";
-                }
-                uiData.UI.UpdateMiddleText(resultText);
-                SetAllCardsInZoneFaceDown(CardZone.PLAYER, false);
-                SetAllCardsInZoneFaceDown(CardZone.ENEMY, false);
-                
-                break;
+                    uiData.UI.UpdatePlayerPointsText($"Current Points: {gameData.currentPoints}");
+                    uiData.UI.UpdateMiddleText(gameData.currentPoints >= pointsGoal
+                        ? $"You Win! Final Score: {gameData.currentPoints}"
+                        : $"Game Over! Final Score: {gameData.currentPoints}");
+                    break;
         }
     }
     
@@ -598,7 +560,7 @@ public class GameManager : MonoBehaviour
     }
     
     private void ReplaceCardFromDraw(int drawCardId, int replaceCardId) {
-        CardZoneData zoneData = zones[(int)GetCurrentPlayerZone()];
+        CardZoneData zoneData = zones[(int)CardZone.PLAYER];
 
         for (int i = 0; i < zoneData.count; i++) {
             if (zoneData.cardIds[i] == replaceCardId) {
@@ -606,12 +568,26 @@ public class GameManager : MonoBehaviour
                 RemoveCardFromZone(drawCardId, CardZone.PLAYER_DRAW);
                 AddCardToZone(replaceCardId, CardZone.DISCARD);       
                 MarkZoneDirty(CardZone.PLAYER_DRAW);
-                MarkZoneDirty(GetCurrentPlayerZone());
+                MarkZoneDirty(CardZone.PLAYER);
                 MarkZoneDirty(CardZone.DISCARD);
                 break;
             }
         }
 
+    }
+    
+    private void DiscardAllCardsInZone(CardZone zone) {
+        CardZoneData zoneData = zones[(int)zone];
+        Debug.Log($"Discarding all cards in zone {zone} ({zoneData.count} cards)");
+
+        int[] cardIds = new int[zoneData.count];
+        for (int i = 0; i < zoneData.count; i++) {
+            cardIds[i] = zoneData.cardIds[i];
+        }
+        
+        foreach (int cardId in cardIds) {
+            MoveCard(cardId, CardZone.DISCARD);
+        }
     }
 
     // Update is called once per frame
@@ -620,63 +596,40 @@ public class GameManager : MonoBehaviour
         if (!started) return;
         
         switch (gameData.state) {
-            // Each player selects 2 cards and reveals them
+            // player selects 2 cards and reveals them
             case GameState.START:
-                switch (gameStartData.state) {
-                    case GameStartState.WAITING_FOR_PLAYER_SELECTION:
-                        if (gameStartData.playerSelectedCount >= 2) {
-                            gameStartData.state = GameStartState.PLAYER_SELECTION_DONE;
+                switch (_handStartData.state) {
+                    case HandStartState.WAITING_FOR_PLAYER_SELECTION:
+                        if (_handStartData.playerSelectedCount >= 2) {
+                            _handStartData.state = HandStartState.PLAYER_SELECTION_DONE;
                         }
                         break;
-                    case GameStartState.PLAYER_SELECTION_DONE:
+                    case HandStartState.PLAYER_SELECTION_DONE:
                         // TODO: Wait 2 seconds then flip the cards back over and move to enemy selection
-                        gameStartData.waitUntil = Time.time + 2f;
-                        gameStartData.state = GameStartState.WAITING_TO_HIDE_PLAYER_SELECTION;
+                        _handStartData.waitUntil = Time.time + 2f;
+                        _handStartData.state = HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION;
                         break;
                     
-                    case GameStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
-                        if (Time.time < gameStartData.waitUntil) break;
+                    case HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
+                        if (Time.time < _handStartData.waitUntil) break;
                         
-                        for (int i = 0; i < gameStartData.playerSelectedCount; i++) {
-                            int cardId = gameStartData.playerSelectedCards[i];
-                            cards[cardId].facedown = true;
-                            cards[cardId].visualDirty = true;
-                        }
-                        gameStartData.playerSelectedCount = 0;
-                        gameStartData.playerSelectedCards = new int[2];
-                        gameStartData.state = GameStartState.WAITING_FOR_ENEMY_SELECTION;
-                        uiData.dirty = true;
-                        break;
-                    case GameStartState.WAITING_FOR_ENEMY_SELECTION:
-                        if (gameStartData.playerSelectedCount >= 2) {
-                            gameStartData.state = GameStartState.ENEMY_SELECTION_DONE;
-                        }
-                        break;
-                    case GameStartState.ENEMY_SELECTION_DONE:
-                        // TODO: Wait 2 seconds then flip the cards back over and move to enemy selection
-                        gameStartData.waitUntil = Time.time + 2f;
-                        gameStartData.state = GameStartState.WAITING_TO_HIDE_ENEMY_SELECTION;
-                        break;
-                    
-                    case GameStartState.WAITING_TO_HIDE_ENEMY_SELECTION:
-                        if (Time.time < gameStartData.waitUntil) break;
-                        
-                        for (int i = 0; i < gameStartData.playerSelectedCount; i++) {
-                            int cardId = gameStartData.playerSelectedCards[i];
+                        for (int i = 0; i < _handStartData.playerSelectedCount; i++) {
+                            int cardId = _handStartData.playerSelectedCards[i];
                             cards[cardId].facedown = true;
                             cards[cardId].visualDirty = true;
                         }
                         gameData.state = GameState.PLAY;
+                        gameData.turnState = TurnStates.BEGIN;
                         uiData.dirty = true;
                         gameData.currentTurn = 1;
-                        gameData.currentPlayer = PlayerNames.PLAYER;
                         break;
                 }
                 break;
             case GameState.PLAY:
                 switch (gameData.turnState) {
+                    case TurnStates.REVEAL:
+                        break;
                     case TurnStates.BEGIN:
-                        // Select DRAW, SWAP or WORD(after 3 turns)
                         break;
                     case TurnStates.DRAW:
                         break;
@@ -697,44 +650,40 @@ public class GameManager : MonoBehaviour
                         gameData.turnState = TurnStates.END;
                     }
                         break;
-                    case TurnStates.SWAP:
-                        if (gameData.cardsSelected.Count == 2) {
-                            MoveCard(gameData.cardsSelected[0], GetCurrentPlayerZone(true));
-                            MoveCard(gameData.cardsSelected[1], GetCurrentPlayerZone());
-                            MarkZoneDirty(GetCurrentPlayerZone(true));
-                            MarkZoneDirty(GetCurrentPlayerZone());
-                            gameData.turnState = TurnStates.WAIT_FOR_SWAP;
-                            gameData.waitUntil = Time.time + 2f;
-                        }
-                        break;
-                    case TurnStates.WAIT_FOR_SWAP:
-                        if (Time.time >= gameData.waitUntil) {
-                            int cardId = gameData.cardsSelected[0];
-                            cards[cardId].facedown = true;
-                            cards[cardId].visualDirty = true;
-                            cardId = gameData.cardsSelected[1];
-                            cards[cardId].facedown = true;
-                            cards[cardId].visualDirty = true;
-                            gameData.turnState = TurnStates.END;
-                            gameData.cardsSelected.Clear();
-                        }
-                        break;
-                    case TurnStates.WORD:
-                        gameData.state = GameState.END;
-                        uiData.dirty = true;
-                        break;
                     case TurnStates.END:
-                        if (gameData.currentPlayer == PlayerNames.PLAYER) {
-                            gameData.currentPlayer = PlayerNames.ENEMY;
-                        } else {
-                            gameData.currentPlayer = PlayerNames.PLAYER;
-                            gameData.currentTurn++;
-                        }
-
+                        gameData.currentTurn++;
                         uiData.dirty = true;
+                        if (gameData.actionsRemaining < 1 || gameData.hasPassed) {
+                            gameData.turnState = TurnStates.CALCULATE_HAND;
+                            gameData.waitUntil = Time.time + 2f;
+                            gameData.hasPassed = false;
+                            break;
+                        }
+                        
                         gameData.turnState = TurnStates.BEGIN;
-                        if (zones[(int)CardZone.DECK].count == 0) {
-                            gameData.state = GameState.END;
+                        break;
+                    case TurnStates.CALCULATE_HAND:
+                        if (Time.time >= gameData.waitUntil) {
+                            gameData.currentPoints += CalculateZonePoints(CardZone.PLAYER);
+                            uiData.dirty = true;
+                            if (gameData.currentPoints >= gameData.pointsGoal) {
+                                gameData.state = GameState.END;
+                            }
+                            else {
+                                gameData.handsRemaining--;
+                                if (gameData.handsRemaining > 0) {
+                                    SetAllCardsInZoneFaceDown(CardZone.PLAYER, true);
+                                    DiscardAllCardsInZone(CardZone.PLAYER);
+                                    DrawCards(CardZone.PLAYER, 5);
+                                    gameData.state = GameState.START;
+                                    gameData.actionsRemaining = startingActions;
+                                    InitHandStartData(ref _handStartData);
+                                    uiData.dirty = true;
+                                }
+                                else {
+                                    gameData.state = GameState.END;
+                                }
+                            }
                         }
                         break;
                 }
@@ -759,26 +708,28 @@ public struct UIData {
 public struct GameData {
     public GameState state;
     public TurnStates turnState;
-    public PlayerNames currentPlayer;
-    public List<int> cardsSelected;
     public int currentTurn;
     public float waitUntil;
+    public int handsRemaining, actionsRemaining;
+    public int currentPoints, pointsGoal;
+    public bool hasPassed, isNewHand;
+    public List<int> cardsSelected;
 }
 
-public enum PlayerNames {
-    PLAYER,
-    ENEMY
-}
+// public enum PlayerNames {
+//     PLAYER,
+//     ENEMY
+// }
 
 public enum TurnStates {
     BEGIN,
+    REVEAL,
+    CHOOSE_ACTION,
     DRAW,
     REPLACE,
     DISCARD,
-    SWAP,
-    WAIT_FOR_SWAP,
-    WORD,
-    END
+    END,
+    CALCULATE_HAND
 }
 
 public struct CardData {
@@ -817,17 +768,15 @@ public enum CardSuit {
 }
 
 public enum CardZone {
-    PLAYER = 0,
-    ENEMY = 1,
-    DECK = 2,
-    PLAYER_DRAW = 3,
-    ENEMY_DRAW = 4,
-    DISCARD = 5,
+    PLAYER,
+    DECK,
+    PLAYER_DRAW,
+    DISCARD,
     COUNT
 }
 
-struct GameStartData {
-    public GameStartState state;
+struct HandStartData {
+    public HandStartState state;
     
     public int playerSelectedCount;
     public int[] playerSelectedCards;
@@ -835,13 +784,10 @@ struct GameStartData {
     public float waitUntil;
 }
 
-public enum GameStartState {
+public enum HandStartState {
     WAITING_FOR_PLAYER_SELECTION,
     PLAYER_SELECTION_DONE,
     WAITING_TO_HIDE_PLAYER_SELECTION,
-    WAITING_FOR_ENEMY_SELECTION,
-    ENEMY_SELECTION_DONE,
-    WAITING_TO_HIDE_ENEMY_SELECTION,
     READY_TO_START
 }
 

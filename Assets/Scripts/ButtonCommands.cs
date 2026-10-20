@@ -4,6 +4,6 @@ public enum ButtonCommands {
     DRAW,
     REPLACE,
     DISCARD,
-    SWAP,
+    PASS,
     WORD
 }
