@@ -567,6 +567,8 @@ public class GameManager : MonoBehaviour
                 zoneData.cardIds[i] = drawCardId;
                 RemoveCardFromZone(drawCardId, CardZone.PLAYER_DRAW);
                 AddCardToZone(replaceCardId, CardZone.DISCARD);       
+                cards[drawCardId].zone = CardZone.PLAYER;
+                cards[replaceCardId].zone = CardZone.DISCARD;
                 MarkZoneDirty(CardZone.PLAYER_DRAW);
                 MarkZoneDirty(CardZone.PLAYER);
                 MarkZoneDirty(CardZone.DISCARD);
