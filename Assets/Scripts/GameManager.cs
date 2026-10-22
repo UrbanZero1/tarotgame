@@ -27,11 +27,13 @@ public class GameManager : MonoBehaviour
     private CardVisual[] cardVisuals = new CardVisual[MAX_CARDS];
     private CardData[] cards = new CardData[MAX_CARDS];
     private CardInteractionData[] cardInteractions = new CardInteractionData[MAX_CARDS];
+    private CardTooltipData[] cardTooltips = new CardTooltipData[MAX_CARDS];
     private CardZoneData[] zones;
     private HandStartData _handStartData;
     public UIData uiData;
 
     private bool started = false;
+    private int activeTooltipCardId = INVALID_CARD_ID;
     
     GameData gameData; 
 
@@ -49,8 +51,10 @@ public class GameManager : MonoBehaviour
     
     void Restart() {
         cards = new CardData[MAX_CARDS];
+        cardTooltips = new CardTooltipData[MAX_CARDS];
         CreateDefaultDeck(ref cards);
         ResetZones();
+        HideCardTooltip();
         DestroyCards();
         PopulateDeckZone();
         ShuffleZone(CardZone.DECK);
@@ -174,8 +178,8 @@ public class GameManager : MonoBehaviour
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = true;
         cardInteractions[cardId] = interaction;
-        
-        // TODO: Implement hover highlight
+
+        ShowTooltipForCard(cardId);
     }
 
     private void OnCardPointerExited(int cardId) {
@@ -184,6 +188,10 @@ public class GameManager : MonoBehaviour
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = false;
         cardInteractions[cardId] = interaction;
+
+        if (activeTooltipCardId == cardId) {
+            HideCardTooltip();
+        }
     }
 
     private void OnCardPointerPressed(int cardId) {
@@ -276,7 +284,34 @@ public class GameManager : MonoBehaviour
     }
 
     private void ResetCardInteraction(int cardId) {
+        if (activeTooltipCardId == cardId) {
+            HideCardTooltip();
+        }
         cardInteractions[cardId] = default;
+    }
+
+    // Integration point for future special-card systems.
+    public void SetCardTooltip(int cardId, string text) {
+        if (!IsValidCardId(cardId)) return;
+
+        CardTooltipData tooltip = cardTooltips[cardId];
+        tooltip.enabled = !string.IsNullOrWhiteSpace(text);
+        tooltip.text = tooltip.enabled ? text : null;
+        cardTooltips[cardId] = tooltip;
+
+        if (!tooltip.enabled && activeTooltipCardId == cardId) {
+            HideCardTooltip();
+        }
+    }
+
+    // Integration point for future special-card systems.
+    public void ClearCardTooltip(int cardId) {
+        if (!IsValidCardId(cardId)) return;
+
+        cardTooltips[cardId] = default;
+        if (activeTooltipCardId == cardId) {
+            HideCardTooltip();
+        }
     }
 
     // ReSharper disable Unity.PerformanceAnalysis
@@ -503,6 +538,33 @@ public class GameManager : MonoBehaviour
             
             OnCardHeld(cardId);
         }
+    }
+
+    private void ShowTooltipForCard(int cardId) {
+        if (activeTooltipCardId != INVALID_CARD_ID && activeTooltipCardId != cardId) {
+            HideCardTooltip();
+        }
+
+        CardTooltipData tooltip = cardTooltips[cardId];
+        if (!tooltip.enabled) return;
+
+        CardVisual visual = cardVisuals[cardId];
+        if (!visual) return;
+
+        if (!visual.TryGetTooltipAnchor(out RectTransform anchor)) return;
+
+        if (!uiData.UI) return;
+
+        uiData.UI.ShowCardTooltip(tooltip.text, anchor);
+        activeTooltipCardId = cardId;
+    }
+
+    private void HideCardTooltip() {
+        if (uiData.UI) {
+            uiData.UI.HideCardTooltip();
+        }
+
+        activeTooltipCardId = INVALID_CARD_ID;
     }
     
     private int CalculateZonePoints(CardZone zone) {

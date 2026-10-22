@@ -24,8 +24,21 @@ public class CardVisual : MonoBehaviour, IPointerEnterHandler, IPointerExitHandl
 
     private CardData[] cards;
     private int cardId = -1;
+    private RectTransform tooltipAnchor;
 
     public int CardId => cardId;
+
+    public bool TryGetTooltipAnchor(out RectTransform anchor) {
+        if (!tooltipAnchor) {
+            Canvas canvas = GetComponentInChildren<Canvas>();
+            if (canvas) {
+                tooltipAnchor = canvas.transform as RectTransform;
+            }
+        }
+
+        anchor = tooltipAnchor;
+        return anchor;
+    }
 
     public void Initialize(CardData[] cards, int id) {
         this.cards = cards;
