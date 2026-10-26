@@ -14,9 +14,6 @@ public class CardVisual : AbstractCardVisual
     [SerializeField] private Sprite frontFace;
     [SerializeField] private Sprite backFace;
 
-    /// <summary> Only set true for the human player </summary>
-    public bool IsInteractable { get; set; }
-
     private CardData[] cards;
 
     public void Initialize(CardData[] cards, int cardId) {

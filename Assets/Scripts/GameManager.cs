@@ -19,7 +19,6 @@ public class GameManager : MonoBehaviour
 
     [Header("Zone Views")]
     [SerializeField] private ZoneView[] zoneViews;
-    [SerializeField] private ZoneView tarotZoneView;
 
     [SerializeField] private GameObject cardPrefab;
     [SerializeField] private GameObject tarotCardPrefab;
@@ -70,6 +69,13 @@ public class GameManager : MonoBehaviour
                 cardVisuals[i] = null;
             }
         }
+        
+        for (int i = 0; i < tarotCardVisuals.Length; i++) {
+            if (tarotCardVisuals[i] != null) {
+                Destroy(tarotCardVisuals[i].gameObject);
+                tarotCardVisuals[i] = null;
+            }
+        }
     }
 
     void ResetZones() {
@@ -77,7 +83,7 @@ public class GameManager : MonoBehaviour
             zones[i].count = 0;
             zones[i].dirty = true;
             for (int j = 0; j < zones[i].cardIds.Length; j++) {
-                zones[i].cardIds[i] = INVALID_CARD_ID;
+                zones[i].cardIds[j] = INVALID_CARD_ID;
             }
         }
     }
@@ -222,7 +228,7 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
-    private void OnCardPointerEntered(int cardId, Type visualType) {
+    private void OnCardPointerEntered(AbstractCardVisual visual) {
         // if (visualType == typeof(TarotCardVisual)) {;
         //     Debug.Log($"Tarot card hovered: {tarotCards[cardId].type}");
         // }
@@ -232,8 +238,8 @@ public class GameManager : MonoBehaviour
         // else {
         //     Debug.LogError($"Unknown visual type: {visualType}");
         // }
-        if (!IsValidCardId(cardId)) return;
-        if (visualType == typeof(TarotCardVisual)) return;
+        int cardId = visual.cardId;
+        if (visual is TarotCardVisual) return;
         
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = true;
@@ -242,19 +248,22 @@ public class GameManager : MonoBehaviour
         // TODO: Implement hover highlight
     }
 
-    private void OnCardPointerExited(int cardId, Type visualType) {
+    private void OnCardPointerExited(AbstractCardVisual visual) {
+        int cardId = visual.cardId;
+        if (visual is TarotCardVisual) return;
+        
         if (!IsValidCardId(cardId)) return;
         
-        if (visualType == typeof(TarotCardVisual)) return;
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = false;
         cardInteractions[cardId] = interaction;
     }
 
-    private void OnCardPointerPressed(int cardId, Type visualType) {
+    private void OnCardPointerPressed(AbstractCardVisual visual) {
+        int cardId = visual.cardId;
+        if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
         
-        if (visualType == typeof(TarotCardVisual)) return;
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.pressed = true;
         interaction.holdTriggered = false;
@@ -262,10 +271,10 @@ public class GameManager : MonoBehaviour
         cardInteractions[cardId] = interaction;
     }
 
-    private void OnCardPointerReleased(int cardId, Type visualType) {
+    private void OnCardPointerReleased(AbstractCardVisual visual) {
+        int cardId = visual.cardId;
+        if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
-
-        if (visualType == typeof(TarotCardVisual)) return;
 
         CardInteractionData interaction = cardInteractions[cardId];
         if (!interaction.pressed) return;
@@ -494,11 +503,14 @@ public class GameManager : MonoBehaviour
             return;
         }
         CardZoneData zoneData = zones[(int)zone];
+        
+        AbstractCardVisual[] visuals =
+            zone == CardZone.TAROT ? tarotCardVisuals : cardVisuals;
 
         if (view.anchor == null || view.layout == null) {
             for (int i = 0; i < zoneData.count; i++) {
                 int cardId = zoneData.cardIds[i];
-                CardVisual visual = cardVisuals[cardId];
+                AbstractCardVisual visual = visuals[cardId];
                 if (!visual) continue;
 
                 visual.transform.SetParent(null, false);
@@ -511,7 +523,7 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < zoneData.count; i++) {
             int cardId = zoneData.cardIds[i];
-            CardVisual visual = cardVisuals[cardId];
+            AbstractCardVisual visual = visuals[cardId];
             if (!visual) continue;
 
             visual.transform.SetParent(view.anchor, false);
@@ -520,18 +532,10 @@ public class GameManager : MonoBehaviour
         
 
         if (view.layout) {
-            if (zone == CardZone.TAROT) {
-                view.layout.Layout(
-                    zoneData.cardIds,
-                    zoneData.count,
-                    tarotCardVisuals);
-            }
-            else {
-                view.layout.Layout(
-                    zoneData.cardIds,
-                    zoneData.count,
-                    cardVisuals);
-            }
+            view.layout.Layout(
+                zoneData.cardIds,
+                zoneData.count,
+                visuals);
         }
     }
 
