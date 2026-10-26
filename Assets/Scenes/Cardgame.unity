@@ -129,7 +129,6 @@ GameObject:
   m_Component:
   - component: {fileID: 215885038}
   - component: {fileID: 215885037}
-  - component: {fileID: 215885039}
   m_Layer: 0
   m_Name: PlayerDraw
   m_TagString: Untagged
@@ -165,19 +164,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
---- !u!114 &215885039
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 215885036}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5129a222b9a4d634294442e389cd7c77, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HorizontalCardLayout
-  cardSpacing: 1.2
 --- !u!1 &219278429
 GameObject:
   m_ObjectHideFlags: 0
@@ -652,6 +638,51 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5950008052698384469, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
   m_PrefabInstance: {fileID: 1369372732}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1122263659
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1122263661}
+  - component: {fileID: 1122263660}
+  m_Layer: 0
+  m_Name: TarotCardZone
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1122263660
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1122263659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5129a222b9a4d634294442e389cd7c77, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HorizontalCardLayout
+  cardSpacing: 1.1
+--- !u!4 &1122263661
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1122263659}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0.4, y: -3.2, z: -1.49}
+  m_LocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  m_ConstrainProportionsScale: 1
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!1001 &1369372732
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -938,6 +969,10 @@ MonoBehaviour:
   - zone: 3
     anchor: {fileID: 0}
     layout: {fileID: 0}
+  tarotZoneView:
+    zone: 0
+    anchor: {fileID: 0}
+    layout: {fileID: 0}
   cardPrefab: {fileID: 6362416994652406293, guid: 46cdf36a1c0337f43b7984af5e05b106, type: 3}
   uiObject: {fileID: 1019842354}
 --- !u!4 &1639340174
@@ -965,6 +1000,7 @@ SceneRoots:
   - {fileID: 659502020}
   - {fileID: 397713157}
   - {fileID: 215885038}
+  - {fileID: 1122263661}
   - {fileID: 219278430}
   - {fileID: 1444528411}
   - {fileID: 1369372732}

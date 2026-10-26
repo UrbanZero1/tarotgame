@@ -9,6 +9,8 @@ public class GameManager : MonoBehaviour
     public const int MAX_CARDS = 52;
     private const int MAX_CARDS_PER_ZONE = MAX_CARDS;
     public const int INVALID_CARD_ID = -1;
+    public const int STARTING_TAROT_CARDS = 3;
+    
     [SerializeField] private float holdDuration = 0.5f; // Duration in seconds to trigger a hold event
     [SerializeField] private int startingHands = 3;
     [SerializeField] private int startingActions = 3;
@@ -17,6 +19,7 @@ public class GameManager : MonoBehaviour
 
     [Header("Zone Views")]
     [SerializeField] private ZoneView[] zoneViews;
+    [SerializeField] private ZoneView tarotZoneView;
 
     [SerializeField] private GameObject cardPrefab;
 
@@ -28,6 +31,7 @@ public class GameManager : MonoBehaviour
     private CardData[] cards = new CardData[MAX_CARDS];
     private CardInteractionData[] cardInteractions = new CardInteractionData[MAX_CARDS];
     private CardZoneData[] zones;
+    private List<TarotCardData> availableTarotCards = new List<TarotCardData>();
     private HandStartData _handStartData;
     public UIData uiData;
 
@@ -81,6 +85,7 @@ public class GameManager : MonoBehaviour
      * Both players draw 5 cards
      */
     private void GameStart() {
+        CreateStartingTarotCards();
         DrawCards(CardZone.PLAYER, 5);
         gameData.state = GameState.START;
         gameData.currentPoints = 0;
@@ -93,6 +98,27 @@ public class GameManager : MonoBehaviour
         InitHandStartData(ref _handStartData);
         uiData.dirty = true;
         started = true;
+    }
+
+    private void CreateStartingTarotCards() {
+        TarotCardType[] allTarotCardTypes = 
+            (TarotCardType[])Enum.GetValues(typeof(TarotCardType));
+        
+        List<TarotCardType> remainingCards = new List<TarotCardType>(allTarotCardTypes);
+
+        availableTarotCards.Clear();
+        
+        for (int i = 0; i < STARTING_TAROT_CARDS && remainingCards.Count > 0; i++) {
+            int randomIndex = UnityEngine.Random.Range(0, remainingCards.Count);
+            TarotCardType selectedType = remainingCards[randomIndex];
+            remainingCards.RemoveAt(randomIndex);
+
+            TarotCardData tarotCard = new TarotCardData {
+                type = selectedType,
+            };
+
+            availableTarotCards.Add(tarotCard);
+        }
     }
 
     private void InitHandStartData(ref HandStartData handStartData) {
@@ -816,6 +842,7 @@ public enum CardZone {
     DECK,
     PLAYER_DRAW,
     DISCARD,
+    TAROT,
     COUNT
 }
 
