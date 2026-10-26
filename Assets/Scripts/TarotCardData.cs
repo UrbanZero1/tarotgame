@@ -3,7 +3,7 @@ using UnityEngine;
 
 [Serializable]
 public struct TarotCardData {
-    public int id;
+    public int cardId;
     public TarotCardType type;
 }
 

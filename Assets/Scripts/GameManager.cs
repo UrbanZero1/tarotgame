@@ -22,16 +22,18 @@ public class GameManager : MonoBehaviour
     [SerializeField] private ZoneView tarotZoneView;
 
     [SerializeField] private GameObject cardPrefab;
+    [SerializeField] private GameObject tarotCardPrefab;
 
     [Header("UI Object")] 
     [SerializeField] GameObject uiObject;
 
 
     private CardVisual[] cardVisuals = new CardVisual[MAX_CARDS];
+    private TarotCardVisual[] tarotCardVisuals = new TarotCardVisual[STARTING_TAROT_CARDS];
     private CardData[] cards = new CardData[MAX_CARDS];
     private CardInteractionData[] cardInteractions = new CardInteractionData[MAX_CARDS];
     private CardZoneData[] zones;
-    private List<TarotCardData> availableTarotCards = new List<TarotCardData>();
+    private TarotCardData[] tarotCards = new TarotCardData[STARTING_TAROT_CARDS];
     private HandStartData _handStartData;
     public UIData uiData;
 
@@ -105,20 +107,46 @@ public class GameManager : MonoBehaviour
             (TarotCardType[])Enum.GetValues(typeof(TarotCardType));
         
         List<TarotCardType> remainingCards = new List<TarotCardType>(allTarotCardTypes);
-
-        availableTarotCards.Clear();
         
-        for (int i = 0; i < STARTING_TAROT_CARDS && remainingCards.Count > 0; i++) {
+        for (int i = 0; i < STARTING_TAROT_CARDS; i++) {
             int randomIndex = UnityEngine.Random.Range(0, remainingCards.Count);
             TarotCardType selectedType = remainingCards[randomIndex];
             remainingCards.RemoveAt(randomIndex);
 
             TarotCardData tarotCard = new TarotCardData {
+                cardId = i,
                 type = selectedType,
             };
-
-            availableTarotCards.Add(tarotCard);
+            
+            tarotCards[i] = tarotCard;
+            SpawnTarotCard(tarotCard);
+            AddCardToZone(tarotCard.cardId, CardZone.TAROT);
         }
+    }
+    
+    private void SpawnTarotCard(TarotCardData tarotCard) {
+        ZoneView zoneView = zoneViews[(int)CardZone.TAROT];
+        
+        GameObject newCard = Instantiate(tarotCardPrefab);
+        TarotCardVisual visual = newCard.GetComponent<TarotCardVisual>();
+        
+        visual.Initialize(tarotCards, tarotCard.cardId);
+        
+        visual.PointerEntered += OnCardPointerEntered;
+        visual.PointerExited += OnCardPointerExited;
+        visual.PointerPressed += OnCardPointerPressed;
+        visual.PointerReleased += OnCardPointerReleased;
+        
+        tarotCardVisuals[tarotCard.cardId] = visual;
+        
+        if (zoneView.anchor == null) {
+            Debug.LogError($"Tarot ZoneView has no anchor assigned.");
+            return;
+        }
+
+        visual.transform.SetParent(zoneView.anchor, false);
+        
+        MarkZoneDirty(CardZone.TAROT);
     }
 
     private void InitHandStartData(ref HandStartData handStartData) {
@@ -194,8 +222,18 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
-    private void OnCardPointerEntered(int cardId) {
+    private void OnCardPointerEntered(int cardId, Type visualType) {
+        // if (visualType == typeof(TarotCardVisual)) {;
+        //     Debug.Log($"Tarot card hovered: {tarotCards[cardId].type}");
+        // }
+        // else if (visualType == typeof(CardVisual)) {
+        //     Debug.Log($"Card hovered: {cards[cardId]}");
+        // }
+        // else {
+        //     Debug.LogError($"Unknown visual type: {visualType}");
+        // }
         if (!IsValidCardId(cardId)) return;
+        if (visualType == typeof(TarotCardVisual)) return;
         
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = true;
@@ -204,17 +242,19 @@ public class GameManager : MonoBehaviour
         // TODO: Implement hover highlight
     }
 
-    private void OnCardPointerExited(int cardId) {
+    private void OnCardPointerExited(int cardId, Type visualType) {
         if (!IsValidCardId(cardId)) return;
         
+        if (visualType == typeof(TarotCardVisual)) return;
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = false;
         cardInteractions[cardId] = interaction;
     }
 
-    private void OnCardPointerPressed(int cardId) {
+    private void OnCardPointerPressed(int cardId, Type visualType) {
         if (!IsValidCardId(cardId)) return;
         
+        if (visualType == typeof(TarotCardVisual)) return;
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.pressed = true;
         interaction.holdTriggered = false;
@@ -222,8 +262,10 @@ public class GameManager : MonoBehaviour
         cardInteractions[cardId] = interaction;
     }
 
-    private void OnCardPointerReleased(int cardId) {
+    private void OnCardPointerReleased(int cardId, Type visualType) {
         if (!IsValidCardId(cardId)) return;
+
+        if (visualType == typeof(TarotCardVisual)) return;
 
         CardInteractionData interaction = cardInteractions[cardId];
         if (!interaction.pressed) return;
@@ -475,12 +517,21 @@ public class GameManager : MonoBehaviour
             visual.transform.SetParent(view.anchor, false);
             visual.gameObject.SetActive(true);
         }
+        
 
         if (view.layout) {
-            view.layout.Layout(
+            if (zone == CardZone.TAROT) {
+                view.layout.Layout(
+                    zoneData.cardIds,
+                    zoneData.count,
+                    tarotCardVisuals);
+            }
+            else {
+                view.layout.Layout(
                     zoneData.cardIds,
                     zoneData.count,
                     cardVisuals);
+            }
         }
     }
 
