@@ -106,6 +106,7 @@ public class GameManager : MonoBehaviour
         InitHandStartData(ref _handStartData);
         uiData.dirty = true;
         started = true;
+        uiData.tooltipEnabled = true;
     }
 
     private void CreateStartingTarotCards() {
@@ -664,6 +665,10 @@ public class GameManager : MonoBehaviour
                     uiData.UI.EnableExitButton(true);
                     break;
         }
+
+        if (uiData.tooltipEnabled) {
+            uiData.UI.tooltip.Show(tarotCards[0].type.GetDescription(), new Vector2(0,0));
+        }
     }
     
     private void SetAllCardsInZoneFaceDown(CardZone zone, bool facedown) {
@@ -828,6 +833,7 @@ public class GameManager : MonoBehaviour
 public struct UIData {
     public bool dirty;
     public GameUI UI;
+    public bool tooltipEnabled;
 }
 
 public struct GameData {

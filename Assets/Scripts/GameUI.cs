@@ -16,6 +16,7 @@ public class GameUI : MonoBehaviour {
     [SerializeField] private Button passButton;
     [SerializeField] private Button restartButton;
     [SerializeField] private Button exitButton;
+    [SerializeField] public TarotCardTooltip tooltip;
     
     public event System.Action<ButtonCommands> Clicked;
     
