@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using UnityEngine.EventSystems;
 //using UnityEditor.U2D;
 using UnityEngine.PlayerLoop;
 
@@ -34,6 +35,7 @@ public class GameManager : MonoBehaviour
     private CardZoneData[] zones;
     private TarotCardData[] tarotCards = new TarotCardData[STARTING_TAROT_CARDS];
     private HandStartData _handStartData;
+    private TooltipData tooltipData;
     public UIData uiData;
 
     private bool started = false;
@@ -106,7 +108,6 @@ public class GameManager : MonoBehaviour
         InitHandStartData(ref _handStartData);
         uiData.dirty = true;
         started = true;
-        uiData.tooltipEnabled = true;
     }
 
     private void CreateStartingTarotCards() {
@@ -229,7 +230,7 @@ public class GameManager : MonoBehaviour
         return true;
     }
 
-    private void OnCardPointerEntered(AbstractCardVisual visual) {
+    private void OnCardPointerEntered(AbstractCardVisual visual, PointerEventData eventData) {
         // if (visualType == typeof(TarotCardVisual)) {;
         //     Debug.Log($"Tarot card hovered: {tarotCards[cardId].type}");
         // }
@@ -240,7 +241,11 @@ public class GameManager : MonoBehaviour
         //     Debug.LogError($"Unknown visual type: {visualType}");
         // }
         int cardId = visual.cardId;
-        if (visual is TarotCardVisual) return;
+        if (visual is TarotCardVisual) {
+            Debug.Log("Hovered over Tarot card: " + tarotCards[cardId].type);
+            ShowToolTip(visual, eventData);
+            return;
+        }
         
         CardInteractionData interaction = cardInteractions[cardId];
         interaction.hovered = true;
@@ -249,9 +254,37 @@ public class GameManager : MonoBehaviour
         // TODO: Implement hover highlight
     }
 
-    private void OnCardPointerExited(AbstractCardVisual visual) {
+    private void ShowToolTip(AbstractCardVisual visual, PointerEventData eventData) {
+        tooltipData.visible = true;
+        tooltipData.position = eventData.position;
+        tooltipData.hoveredTarotCard = visual as TarotCardVisual;
+    }
+    
+    private void HideToolTip() {
+        tooltipData.visible = false;
+        tooltipData.hoveredTarotCard = null;
+    }
+    
+    private void UpdateToolTip() {
+        if (!tooltipData.visible) {
+            uiData.UI.tooltip.Hide();
+            return;
+        }
+
+        if (!tooltipData.hoveredTarotCard) return;
+        
+        int cardId = tooltipData.hoveredTarotCard.cardId;
+
+        uiData.UI.tooltip.Show(tarotCards[cardId].type.GetDescription(), tooltipData.position);
+    }
+
+    private void OnCardPointerExited(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
-        if (visual is TarotCardVisual) return;
+        if (visual is TarotCardVisual) {
+            Debug.Log("Stopped hovering over Tarot card: " + tarotCards[cardId].type);
+            HideToolTip();
+            return;
+        }
         
         if (!IsValidCardId(cardId)) return;
         
@@ -260,7 +293,7 @@ public class GameManager : MonoBehaviour
         cardInteractions[cardId] = interaction;
     }
 
-    private void OnCardPointerPressed(AbstractCardVisual visual) {
+    private void OnCardPointerPressed(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
         if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
@@ -272,7 +305,7 @@ public class GameManager : MonoBehaviour
         cardInteractions[cardId] = interaction;
     }
 
-    private void OnCardPointerReleased(AbstractCardVisual visual) {
+    private void OnCardPointerReleased(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
         if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
@@ -665,10 +698,6 @@ public class GameManager : MonoBehaviour
                     uiData.UI.EnableExitButton(true);
                     break;
         }
-
-        if (uiData.tooltipEnabled) {
-            uiData.UI.tooltip.Show(tarotCards[0].type.GetDescription(), new Vector2(0,0));
-        }
     }
     
     private void SetAllCardsInZoneFaceDown(CardZone zone, bool facedown) {
@@ -825,6 +854,7 @@ public class GameManager : MonoBehaviour
         UpdateDirtyZones();
         UpdateCardVisuals();
         UpdateUI();
+        UpdateToolTip();
         UpdateCardInteractions();
     }
 
@@ -833,7 +863,6 @@ public class GameManager : MonoBehaviour
 public struct UIData {
     public bool dirty;
     public GameUI UI;
-    public bool tooltipEnabled;
 }
 
 public struct GameData {
@@ -896,6 +925,12 @@ public enum CardSuit {
     Diamonds,
     Clubs,
     Spades,
+}
+
+struct TooltipData {
+    public bool visible;
+    public Vector2 position;
+    public TarotCardVisual hoveredTarotCard;
 }
 
 public enum CardZone {

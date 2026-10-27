@@ -12,10 +12,10 @@ public abstract class AbstractCardVisual : MonoBehaviour,
 {
     public int cardId { get; private set; } = -1;
 
-    public event Action<AbstractCardVisual> PointerEntered;
-    public event Action<AbstractCardVisual> PointerExited;
-    public event Action<AbstractCardVisual> PointerPressed;
-    public event Action<AbstractCardVisual> PointerReleased;
+    public event Action<AbstractCardVisual, PointerEventData> PointerEntered;
+    public event Action<AbstractCardVisual, PointerEventData> PointerExited;
+    public event Action<AbstractCardVisual, PointerEventData> PointerPressed;
+    public event Action<AbstractCardVisual, PointerEventData> PointerReleased;
 
     public virtual void Initialize(int cardId)
     {
@@ -32,23 +32,23 @@ public abstract class AbstractCardVisual : MonoBehaviour,
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        PointerEntered?.Invoke(this);
+        PointerEntered?.Invoke(this, eventData);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        PointerExited?.Invoke(this);
+        PointerExited?.Invoke(this, eventData);
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Left)
-            PointerPressed?.Invoke(this);
+            PointerPressed?.Invoke(this, eventData);
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
         if (eventData.button == PointerEventData.InputButton.Left)
-            PointerReleased?.Invoke(this);
+            PointerReleased?.Invoke(this, eventData);
     } 
 }

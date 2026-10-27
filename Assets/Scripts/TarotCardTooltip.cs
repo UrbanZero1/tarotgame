@@ -20,6 +20,7 @@ public class TarotCardTooltip : MonoBehaviour
 
     private void Awake() {
         parentCanvas = GetComponentInParent<Canvas>();
+        DisableRaycasts();
         uiModule = (InputSystemUIInputModule)EventSystem.current.currentInputModule;
     
         Hide();
