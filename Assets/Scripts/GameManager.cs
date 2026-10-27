@@ -8,6 +8,7 @@ using UnityEngine.PlayerLoop;
 public class GameManager : MonoBehaviour
 {
     public const int MAX_CARDS = 52;
+    public const int MAX_TOTAL_CARDS = MAX_CARDS + STARTING_TAROT_CARDS;
     private const int MAX_CARDS_PER_ZONE = MAX_CARDS;
     public const int INVALID_CARD_ID = -1;
     public const int STARTING_TAROT_CARDS = 3;
@@ -28,24 +29,19 @@ public class GameManager : MonoBehaviour
     [SerializeField] GameObject uiObject;
 
 
-    private CardVisual[] cardVisuals = new CardVisual[MAX_CARDS];
-    private TarotCardVisual[] tarotCardVisuals = new TarotCardVisual[STARTING_TAROT_CARDS];
-    private CardData[] cards = new CardData[MAX_CARDS];
-    private CardInteractionData[] cardInteractions = new CardInteractionData[MAX_CARDS];
-    private CardZoneData[] zones;
-    private TarotCardData[] tarotCards = new TarotCardData[STARTING_TAROT_CARDS];
-    private HandStartData _handStartData;
+    private AbstractCardVisual[] cardVisuals = new AbstractCardVisual[MAX_TOTAL_CARDS];
+    private GameStateData state;
     private TooltipData tooltipData;
     public UIData uiData;
 
     private bool started = false;
-    
-    GameData gameData; 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        CreateDefaultDeck(ref cards);
+        state.cards = new CardData[MAX_TOTAL_CARDS];
+        state.cardInteractions = new CardInteractionData[MAX_TOTAL_CARDS];
+        CreateDefaultDeck(ref state.cards);
         InitZones();
         PopulateDeckZone();
         ShuffleZone(CardZone.DECK);
@@ -55,8 +51,9 @@ public class GameManager : MonoBehaviour
     }
     
     void Restart() {
-        cards = new CardData[MAX_CARDS];
-        CreateDefaultDeck(ref cards);
+        state.cards = new CardData[MAX_TOTAL_CARDS];
+        state.cardInteractions = new CardInteractionData[MAX_TOTAL_CARDS];
+        CreateDefaultDeck(ref state.cards);
         ResetZones();
         DestroyCards();
         PopulateDeckZone();
@@ -71,21 +68,14 @@ public class GameManager : MonoBehaviour
                 cardVisuals[i] = null;
             }
         }
-        
-        for (int i = 0; i < tarotCardVisuals.Length; i++) {
-            if (tarotCardVisuals[i] != null) {
-                Destroy(tarotCardVisuals[i].gameObject);
-                tarotCardVisuals[i] = null;
-            }
-        }
     }
 
     void ResetZones() {
-        for (int i = 0; i < zones.Length; i++) {
-            zones[i].count = 0;
-            zones[i].dirty = true;
-            for (int j = 0; j < zones[i].cardIds.Length; j++) {
-                zones[i].cardIds[j] = INVALID_CARD_ID;
+        for (int i = 0; i < state.zones.Length; i++) {
+            state.zones[i].count = 0;
+            state.zones[i].dirty = true;
+            for (int j = 0; j < state.zones[i].cardIds.Length; j++) {
+                state.zones[i].cardIds[j] = INVALID_CARD_ID;
             }
         }
     }
@@ -97,15 +87,15 @@ public class GameManager : MonoBehaviour
     private void GameStart() {
         CreateStartingTarotCards();
         DrawCards(CardZone.PLAYER, 5);
-        gameData.state = GameState.START;
-        gameData.currentPoints = 0;
-        gameData.pointsGoal = pointsGoal;
-        gameData.currentTurn = 0;
-        gameData.cardsSelected = new List<int>();
-        gameData.actionsRemaining = startingActions;
-        gameData.handsRemaining = startingHands;
-        _handStartData = new HandStartData{};
-        InitHandStartData(ref _handStartData);
+        state.game.state = GameState.START;
+        state.game.currentPoints = 0;
+        state.game.pointsGoal = pointsGoal;
+        state.game.currentTurn = 0;
+        state.game.cardsSelected = new List<int>();
+        state.game.actionsRemaining = startingActions;
+        state.game.handsRemaining = startingHands;
+        state.handStart = new HandStartData{};
+        InitHandStartData(ref state.handStart);
         uiData.dirty = true;
         started = true;
     }
@@ -121,31 +111,35 @@ public class GameManager : MonoBehaviour
             TarotCardType selectedType = remainingCards[randomIndex];
             remainingCards.RemoveAt(randomIndex);
 
-            TarotCardData tarotCard = new TarotCardData {
-                cardId = i,
-                type = selectedType,
+            int cardId = MAX_CARDS + i;
+            CardData tarotCard = new CardData {
+                id = cardId,
+                kind = CardKind.Tarot,
+                tarotType = selectedType,
+                zone = CardZone.TAROT,
+                visualDirty = true,
             };
             
-            tarotCards[i] = tarotCard;
+            state.cards[cardId] = tarotCard;
             SpawnTarotCard(tarotCard);
-            AddCardToZone(tarotCard.cardId, CardZone.TAROT);
+            AddCardToZone(cardId, CardZone.TAROT);
         }
     }
     
-    private void SpawnTarotCard(TarotCardData tarotCard) {
+    private void SpawnTarotCard(CardData tarotCard) {
         ZoneView zoneView = zoneViews[(int)CardZone.TAROT];
         
         GameObject newCard = Instantiate(tarotCardPrefab);
         TarotCardVisual visual = newCard.GetComponent<TarotCardVisual>();
         
-        visual.Initialize(tarotCards, tarotCard.cardId);
+        visual.Initialize(state, tarotCard.id);
         
         visual.PointerEntered += OnCardPointerEntered;
         visual.PointerExited += OnCardPointerExited;
         visual.PointerPressed += OnCardPointerPressed;
         visual.PointerReleased += OnCardPointerReleased;
         
-        tarotCardVisuals[tarotCard.cardId] = visual;
+        cardVisuals[tarotCard.id] = visual;
         
         if (zoneView.anchor == null) {
             Debug.LogError($"Tarot ZoneView has no anchor assigned.");
@@ -164,7 +158,7 @@ public class GameManager : MonoBehaviour
     }
 
     private void InitZones() {
-        zones = new CardZoneData[(int)CardZone.COUNT];
+        state.zones = new CardZoneData[(int)CardZone.COUNT];
         for (int i = 0; i < (int)CardZone.COUNT; i++) {
 
             int[] cardIds = new int[MAX_CARDS_PER_ZONE];
@@ -173,7 +167,7 @@ public class GameManager : MonoBehaviour
                 cardIds[j] = INVALID_CARD_ID;
             }
 
-            zones[i] = new CardZoneData {
+            state.zones[i] = new CardZoneData {
                 zone = (CardZone)i,
                 cardIds = cardIds,
                 count = 0, 
@@ -187,7 +181,7 @@ public class GameManager : MonoBehaviour
         GameObject newCard = Instantiate(cardPrefab);
         CardVisual visual = newCard.GetComponent<CardVisual>();
         
-        visual.Initialize(cards, cardId);
+        visual.Initialize(state, cardId);
         
         visual.PointerEntered += OnCardPointerEntered;
         visual.PointerExited += OnCardPointerExited;
@@ -196,7 +190,7 @@ public class GameManager : MonoBehaviour
         
         cardVisuals[cardId] = visual;
 
-        CardZone zone = cards[cardId].zone;
+        CardZone zone = state.cards[cardId].zone;
 
         if (!FindZoneView(zone, out ZoneView view))
         {
@@ -211,18 +205,18 @@ public class GameManager : MonoBehaviour
         }
 
         visual.transform.SetParent(view.anchor, false);
-        Debug.Log($"Spawned {cards[cardId]} in {zone}");
+        Debug.Log($"Spawned {state.cards[cardId]} in {zone}");
         
         MarkZoneDirty(zone);
     }
 
     private void MarkZoneDirty(CardZone zone) {
-        zones[(int)zone].dirty = true;
+        state.zones[(int)zone].dirty = true;
     }
 
     // ReSharper disable Unity.PerformanceAnalysis
     public bool IsValidCardId(int cardId) {
-        if (cardId < 0 || cardId >= cards.Length) {
+        if (cardId < 0 || cardId >= state.cards.Length) {
             Debug.LogError($"Invalid card ID: {cardId}");
             return false;
         }
@@ -232,24 +226,24 @@ public class GameManager : MonoBehaviour
 
     private void OnCardPointerEntered(AbstractCardVisual visual, PointerEventData eventData) {
         // if (visualType == typeof(TarotCardVisual)) {;
-        //     Debug.Log($"Tarot card hovered: {tarotCards[cardId].type}");
+        //     Debug.Log($"Tarot card hovered: {state.cards[cardId].tarotType}");
         // }
         // else if (visualType == typeof(CardVisual)) {
-        //     Debug.Log($"Card hovered: {cards[cardId]}");
+        //     Debug.Log($"Card hovered: {state.cards[cardId]}");
         // }
         // else {
         //     Debug.LogError($"Unknown visual type: {visualType}");
         // }
         int cardId = visual.cardId;
         if (visual is TarotCardVisual) {
-            Debug.Log("Hovered over Tarot card: " + tarotCards[cardId].type);
+            Debug.Log("Hovered over Tarot card: " + state.cards[cardId].tarotType);
             ShowToolTip(visual, eventData);
             return;
         }
         
-        CardInteractionData interaction = cardInteractions[cardId];
+        CardInteractionData interaction = state.cardInteractions[cardId];
         interaction.hovered = true;
-        cardInteractions[cardId] = interaction;
+        state.cardInteractions[cardId] = interaction;
         
         // TODO: Implement hover highlight
     }
@@ -275,22 +269,22 @@ public class GameManager : MonoBehaviour
         
         int cardId = tooltipData.hoveredTarotCard.cardId;
 
-        uiData.UI.tooltip.Show(tarotCards[cardId].type.GetDescription(), tooltipData.position);
+        uiData.UI.tooltip.Show(state.cards[cardId].tarotType.GetDescription(), tooltipData.position);
     }
 
     private void OnCardPointerExited(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
         if (visual is TarotCardVisual) {
-            Debug.Log("Stopped hovering over Tarot card: " + tarotCards[cardId].type);
+            Debug.Log("Stopped hovering over Tarot card: " + state.cards[cardId].tarotType);
             HideToolTip();
             return;
         }
         
         if (!IsValidCardId(cardId)) return;
         
-        CardInteractionData interaction = cardInteractions[cardId];
+        CardInteractionData interaction = state.cardInteractions[cardId];
         interaction.hovered = false;
-        cardInteractions[cardId] = interaction;
+        state.cardInteractions[cardId] = interaction;
     }
 
     private void OnCardPointerPressed(AbstractCardVisual visual, PointerEventData eventData) {
@@ -298,11 +292,11 @@ public class GameManager : MonoBehaviour
         if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
         
-        CardInteractionData interaction = cardInteractions[cardId];
+        CardInteractionData interaction = state.cardInteractions[cardId];
         interaction.pressed = true;
         interaction.holdTriggered = false;
         interaction.pressedTime = Time.time;
-        cardInteractions[cardId] = interaction;
+        state.cardInteractions[cardId] = interaction;
     }
 
     private void OnCardPointerReleased(AbstractCardVisual visual, PointerEventData eventData) {
@@ -310,11 +304,11 @@ public class GameManager : MonoBehaviour
         if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
 
-        CardInteractionData interaction = cardInteractions[cardId];
+        CardInteractionData interaction = state.cardInteractions[cardId];
         if (!interaction.pressed) return;
 
         interaction.pressed = false;
-        cardInteractions[cardId] = interaction;
+        state.cardInteractions[cardId] = interaction;
 
         if (!interaction.holdTriggered) {
             OnCardClicked(cardId);
@@ -322,29 +316,29 @@ public class GameManager : MonoBehaviour
     }
     
     private void OnCardClicked(int cardId) {
-        CardData card = cards[cardId];
+        CardData card = state.cards[cardId];
         Debug.Log($"Card clicked: {card}");
 
-        switch (gameData.state) {
+        switch (state.game.state) {
             case GameState.START:
-                switch (_handStartData.state) {
+                switch (state.handStart.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
-                        if (cards[cardId].facedown && cards[cardId].zone == CardZone.PLAYER) {
-                            _handStartData.playerSelectedCards[_handStartData.playerSelectedCount++] = cardId;
-                            cards[cardId].facedown = !cards[cardId].facedown;
-                            cards[cardId].visualDirty = true;
+                        if (state.cards[cardId].facedown && state.cards[cardId].zone == CardZone.PLAYER) {
+                            state.handStart.playerSelectedCards[state.handStart.playerSelectedCount++] = cardId;
+                            state.cards[cardId].facedown = !state.cards[cardId].facedown;
+                            state.cards[cardId].visualDirty = true;
                         }
                         break;
                 }
                 break;
             case GameState.PLAY:
-                switch (gameData.turnState) {
+                switch (state.game.turnState) {
                     case TurnStates.REPLACE:
-                        if (cards[cardId].zone == CardZone.PLAYER) {
-                            if (gameData.cardsSelected.Count < 1) {
-                                gameData.cardsSelected.Add(cardId);
+                        if (state.cards[cardId].zone == CardZone.PLAYER) {
+                            if (state.game.cardsSelected.Count < 1) {
+                                state.game.cardsSelected.Add(cardId);
                             }
-                            gameData.cardsSelected[0] = cardId;
+                            state.game.cardsSelected[0] = cardId;
                         }
                         break;
                 }
@@ -356,21 +350,21 @@ public class GameManager : MonoBehaviour
         switch (command) {
             case ButtonCommands.DRAW:
                 DrawCards(CardZone.PLAYER_DRAW, 1, false);
-                gameData.actionsRemaining--;
-                gameData.turnState = TurnStates.DRAW;
+                state.game.actionsRemaining--;
+                state.game.turnState = TurnStates.DRAW;
                 uiData.dirty = true;
                 break;
             case ButtonCommands.DISCARD:
-                gameData.turnState = TurnStates.DISCARD;
+                state.game.turnState = TurnStates.DISCARD;
                 uiData.dirty = true;
                 break;
             case ButtonCommands.PASS:
-                gameData.hasPassed = true;
-                gameData.turnState = TurnStates.END;
+                state.game.hasPassed = true;
+                state.game.turnState = TurnStates.END;
                 break;
             case ButtonCommands.REPLACE:
-                gameData.cardsSelected = new List<int>();
-                gameData.turnState = TurnStates.REPLACE;
+                state.game.cardsSelected = new List<int>();
+                state.game.turnState = TurnStates.REPLACE;
                 uiData.dirty = true;
                 break;
             case ButtonCommands.RESTART:
@@ -387,25 +381,25 @@ public class GameManager : MonoBehaviour
     }
 
     private void ResetCardInteraction(int cardId) {
-        cardInteractions[cardId] = default;
+        state.cardInteractions[cardId] = default;
     }
 
     // ReSharper disable Unity.PerformanceAnalysis
     private void OnCardHeld(int cardId) {
-        CardData card = cards[cardId];
+        CardData card = state.cards[cardId];
         Debug.Log($"Card held: {card}");
     }
 
     private void MoveCard(int cardId, CardZone dest) {
-        CardData card = cards[cardId];
+        CardData card = state.cards[cardId];
         CardZone source = card.zone;
 
         RemoveCardFromZone(cardId, source);
         AddCardToZone(cardId, dest);
 
-        cards[cardId].zone = dest;
+        state.cards[cardId].zone = dest;
         // Implement if we care where a card is in a specific zone
-        // card.zoneIndex = zones[(int)dest].count - 1;
+        // card.zoneIndex = state.zones[(int)dest].count - 1;
         
         ResetCardInteraction(cardId);
         
@@ -414,16 +408,16 @@ public class GameManager : MonoBehaviour
     }
 
     private void AddCardToZone(int cardId, CardZone zone) {
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
 
         zoneData.cardIds[zoneData.count] = cardId;
         zoneData.count++;
 
-        zones[(int)zone] = zoneData;
+        state.zones[(int)zone] = zoneData;
     }
 
     private void RemoveCardFromZone(int cardId, CardZone zone) {
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
 
         int removeIndex = -1;
 
@@ -441,17 +435,17 @@ public class GameManager : MonoBehaviour
         }
         
         zoneData.count--;
-        zones[(int)zone] = zoneData;
+        state.zones[(int)zone] = zoneData;
     }
 
     private void PopulateDeckZone() {
-        for (int cardId = 0; cardId < cards.Length; cardId++) {
+        for (int cardId = 0; cardId < MAX_CARDS; cardId++) {
             AddCardToZone(cardId, CardZone.DECK);
         }
     }
 
     private bool CreateDefaultDeck(ref CardData[] deck){
-        if (deck == null || deck.Length != MAX_CARDS) return false;
+        if (deck == null || deck.Length < MAX_CARDS) return false;
 
         int cardId = 0;
 
@@ -459,6 +453,7 @@ public class GameManager : MonoBehaviour
             for (int value = 1; value <= 13; value++) {
                 deck[cardId] = new CardData{
                     id = cardId,
+                    kind = CardKind.Standard,
                     value = value,
                     suit = suit,
                     zone = CardZone.DECK,
@@ -478,19 +473,19 @@ public class GameManager : MonoBehaviour
             
             MoveCard(cardId, destination);
 
-            CardData card = cards[cardId];
+            CardData card = state.cards[cardId];
             
             card.facedown = facedown;
             card.visualDirty = true;
 
-            cards[cardId] = card;
+            state.cards[cardId] = card;
 
             SpawnCard(cardId);
         }
     }
 
     private int GetFirstCardInZone(CardZone zone) {
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
 
         if (zoneData.count == 0) {
             Debug.Log("No cards in zone " + zone + " to draw.");
@@ -501,7 +496,7 @@ public class GameManager : MonoBehaviour
     }
 
     private void ShuffleZone(CardZone zone) {
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
 
         System.Random rand = new System.Random();
 
@@ -516,17 +511,17 @@ public class GameManager : MonoBehaviour
         }
 
         zoneData.dirty = true;
-        zones[(int)zone] = zoneData;
+        state.zones[(int)zone] = zoneData;
     }
 
 
     private void UpdateDirtyZones() {
-        for (int i = 0; i < zones.Length; i++) {
-            if (!zones[i].dirty)
+        for (int i = 0; i < state.zones.Length; i++) {
+            if (!state.zones[i].dirty)
                 continue;
 
             LayoutZone((CardZone)i);
-            zones[i].dirty = false;
+            state.zones[i].dirty = false;
         }
     }
 
@@ -536,10 +531,9 @@ public class GameManager : MonoBehaviour
             Debug.Log($"Couldn't find ZoneView {zone}");
             return;
         }
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
         
-        AbstractCardVisual[] visuals =
-            zone == CardZone.TAROT ? tarotCardVisuals : cardVisuals;
+        AbstractCardVisual[] visuals = cardVisuals;
 
         if (view.anchor == null || view.layout == null) {
             for (int i = 0; i < zoneData.count; i++) {
@@ -586,25 +580,25 @@ public class GameManager : MonoBehaviour
     }
 
     private void UpdateCardVisuals() {
-        for (int i = 0; i < cards.Length; i++) {
-            if (!cards[i].visualDirty)
+        for (int i = 0; i < state.cards.Length; i++) {
+            if (!state.cards[i].visualDirty)
                 continue;
 
 
-            CardVisual visual = cardVisuals[i];
+            AbstractCardVisual visual = cardVisuals[i];
             if (visual) {
                 visual.UpdateVisuals();
             }
 
-            cards[i].visualDirty = false;
+            state.cards[i].visualDirty = false;
         }
     }
 
     private void UpdateCardInteractions() {
         float currentTime = Time.time;
         
-        for (int cardId = 0; cardId < cardInteractions.Length; cardId++) {
-            CardInteractionData interaction = cardInteractions[cardId];
+        for (int cardId = 0; cardId < state.cardInteractions.Length; cardId++) {
+            CardInteractionData interaction = state.cardInteractions[cardId];
             
             if (!interaction.pressed) continue; 
             if (interaction.holdTriggered) continue;
@@ -614,7 +608,7 @@ public class GameManager : MonoBehaviour
             if (heldDuration < holdDuration) continue;
             
             interaction.holdTriggered = true;
-            cardInteractions[cardId] = interaction;
+            state.cardInteractions[cardId] = interaction;
             
             OnCardHeld(cardId);
         }
@@ -622,11 +616,11 @@ public class GameManager : MonoBehaviour
     
     private int CalculateZonePoints(CardZone zone) {
         int points = 0;
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
 
         for (int i = 0; i < zoneData.count; i++) {
             int cardId = zoneData.cardIds[i];
-            points += cards[cardId].value;
+            points += state.cards[cardId].value;
         }
 
         return points;
@@ -635,15 +629,15 @@ public class GameManager : MonoBehaviour
     private void UpdateUI() {
         if (!uiData.dirty) return;
         uiData.dirty = false;
-        switch (gameData.state) {
+        switch (state.game.state) {
             case GameState.START:
-                switch (_handStartData.state) {
+                switch (state.handStart.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {gameData.handsRemaining}");
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
-                        uiData.UI.UpdatePointsGoalText($"Goal: {gameData.pointsGoal}");
-                        uiData.UI.UpdatePlayerPointsText($"Current Points: {gameData.currentPoints}");
+                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {state.game.handsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdatePointsGoalText($"Goal: {state.game.pointsGoal}");
+                        uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
                         uiData.UI.UpdateMiddleText("Select 2 cards to reveal");
                         break;
                     case HandStartState.PLAYER_SELECTION_DONE:
@@ -653,23 +647,23 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case GameState.PLAY:
-                switch (gameData.turnState) {
+                switch (state.game.turnState) {
                     case TurnStates.BEGIN:
-                        uiData.UI.UpdatePlayerPointsText($"Current Points: {gameData.currentPoints}");
+                        uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
                         uiData.UI.UpdateMiddleText("Select an action");
                         uiData.UI.EnableDrawButton(true);
                         uiData.UI.EnablePassButton(true);
                         break;
                     case TurnStates.DRAW:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Discard or Replace");
                         uiData.UI.EnableDiscardButton(true);
                         uiData.UI.EnableReplaceButton(true);
                         break;
                     case TurnStates.REPLACE:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {gameData.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Replace a card");
                         break;
                     case TurnStates.DISCARD:
@@ -677,7 +671,7 @@ public class GameManager : MonoBehaviour
                         break;
                     case TurnStates.CALCULATE_HAND:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {gameData.handsRemaining}");
+                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {state.game.handsRemaining}");
                         int playerPoints = CalculateZonePoints(CardZone.PLAYER);
                         string resultText = $"Hand Points: +{playerPoints}\n";
                         uiData.UI.UpdateMiddleText(resultText);
@@ -690,10 +684,10 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case GameState.END:
-                    uiData.UI.UpdatePlayerPointsText($"Current Points: {gameData.currentPoints}");
-                    uiData.UI.UpdateMiddleText(gameData.currentPoints >= pointsGoal
-                        ? $"You Win! Final Score: {gameData.currentPoints}"
-                        : $"Game Over! Final Score: {gameData.currentPoints}");
+                    uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
+                    uiData.UI.UpdateMiddleText(state.game.currentPoints >= pointsGoal
+                        ? $"You Win! Final Score: {state.game.currentPoints}"
+                        : $"Game Over! Final Score: {state.game.currentPoints}");
                     uiData.UI.EnableRestartButton(true);
                     uiData.UI.EnableExitButton(true);
                     break;
@@ -701,7 +695,7 @@ public class GameManager : MonoBehaviour
     }
     
     private void SetAllCardsInZoneFaceDown(CardZone zone, bool facedown) {
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
 
         for (int i = 0; i < zoneData.count; i++) {
             int cardId = zoneData.cardIds[i];
@@ -712,20 +706,20 @@ public class GameManager : MonoBehaviour
     private void SetCardFaceDown(int cardId, bool facedown) {
         if (!IsValidCardId(cardId)) return;
         
-        cards[cardId].facedown = facedown;
-        cards[cardId].visualDirty = true;
+        state.cards[cardId].facedown = facedown;
+        state.cards[cardId].visualDirty = true;
     }
     
     private void ReplaceCardFromDraw(int drawCardId, int replaceCardId) {
-        CardZoneData zoneData = zones[(int)CardZone.PLAYER];
+        CardZoneData zoneData = state.zones[(int)CardZone.PLAYER];
 
         for (int i = 0; i < zoneData.count; i++) {
             if (zoneData.cardIds[i] == replaceCardId) {
                 zoneData.cardIds[i] = drawCardId;
                 RemoveCardFromZone(drawCardId, CardZone.PLAYER_DRAW);
                 AddCardToZone(replaceCardId, CardZone.DISCARD);       
-                cards[drawCardId].zone = CardZone.PLAYER;
-                cards[replaceCardId].zone = CardZone.DISCARD;
+                state.cards[drawCardId].zone = CardZone.PLAYER;
+                state.cards[replaceCardId].zone = CardZone.DISCARD;
                 MarkZoneDirty(CardZone.PLAYER_DRAW);
                 MarkZoneDirty(CardZone.PLAYER);
                 MarkZoneDirty(CardZone.DISCARD);
@@ -736,7 +730,7 @@ public class GameManager : MonoBehaviour
     }
     
     private void DiscardAllCardsInZone(CardZone zone) {
-        CardZoneData zoneData = zones[(int)zone];
+        CardZoneData zoneData = state.zones[(int)zone];
         Debug.Log($"Discarding all cards in zone {zone} ({zoneData.count} cards)");
 
         int[] cardIds = new int[zoneData.count];
@@ -754,38 +748,38 @@ public class GameManager : MonoBehaviour
     {
         if (!started) return;
         
-        switch (gameData.state) {
-            // player selects 2 cards and reveals them
+        switch (state.game.state) {
+            // Player selects 2 cards and reveals them.
             case GameState.START:
-                switch (_handStartData.state) {
+                switch (state.handStart.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
-                        if (_handStartData.playerSelectedCount >= 2) {
-                            _handStartData.state = HandStartState.PLAYER_SELECTION_DONE;
+                        if (state.handStart.playerSelectedCount >= 2) {
+                            state.handStart.state = HandStartState.PLAYER_SELECTION_DONE;
                         }
                         break;
                     case HandStartState.PLAYER_SELECTION_DONE:
-                        // TODO: Wait 2 seconds then flip the cards back over and move to enemy selection
-                        _handStartData.waitUntil = Time.time + 2f;
-                        _handStartData.state = HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION;
+                        // TODO: Wait 2 seconds then flip the cards back over and move to enemy selection.
+                        state.handStart.waitUntil = Time.time + 2f;
+                        state.handStart.state = HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION;
                         break;
                     
                     case HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
-                        if (Time.time < _handStartData.waitUntil) break;
+                        if (Time.time < state.handStart.waitUntil) break;
                         
-                        for (int i = 0; i < _handStartData.playerSelectedCount; i++) {
-                            int cardId = _handStartData.playerSelectedCards[i];
-                            cards[cardId].facedown = true;
-                            cards[cardId].visualDirty = true;
+                        for (int i = 0; i < state.handStart.playerSelectedCount; i++) {
+                            int cardId = state.handStart.playerSelectedCards[i];
+                            state.cards[cardId].facedown = true;
+                            state.cards[cardId].visualDirty = true;
                         }
-                        gameData.state = GameState.PLAY;
-                        gameData.turnState = TurnStates.BEGIN;
+                        state.game.state = GameState.PLAY;
+                        state.game.turnState = TurnStates.BEGIN;
                         uiData.dirty = true;
-                        gameData.currentTurn = 1;
+                        state.game.currentTurn = 1;
                         break;
                 }
                 break;
             case GameState.PLAY:
-                switch (gameData.turnState) {
+                switch (state.game.turnState) {
                     case TurnStates.REVEAL:
                         break;
                     case TurnStates.BEGIN:
@@ -793,54 +787,54 @@ public class GameManager : MonoBehaviour
                     case TurnStates.DRAW:
                         break;
                     case TurnStates.REPLACE:
-                        if (gameData.cardsSelected.Count > 0) {
+                        if (state.game.cardsSelected.Count > 0) {
                             int drawCardId = GetFirstCardInZone(CardZone.PLAYER_DRAW);
-                            int removeCardId = gameData.cardsSelected[0];
+                            int removeCardId = state.game.cardsSelected[0];
                             ReplaceCardFromDraw(drawCardId, removeCardId);
                             SetCardFaceDown(drawCardId, true);
-                            gameData.cardsSelected.Clear();
-                            gameData.turnState = TurnStates.END;
+                            state.game.cardsSelected.Clear();
+                            state.game.turnState = TurnStates.END;
                             uiData.dirty = true;
                         }
                         break;
                     case TurnStates.DISCARD: {
                         int cardId = GetFirstCardInZone(CardZone.PLAYER_DRAW);
                         MoveCard(cardId, CardZone.DISCARD);
-                        gameData.turnState = TurnStates.END;
+                        state.game.turnState = TurnStates.END;
                     }
                         break;
                     case TurnStates.END:
-                        gameData.currentTurn++;
+                        state.game.currentTurn++;
                         uiData.dirty = true;
-                        if (gameData.actionsRemaining < 1 || gameData.hasPassed) {
-                            gameData.turnState = TurnStates.CALCULATE_HAND;
-                            gameData.waitUntil = Time.time + 2f;
-                            gameData.hasPassed = false;
+                        if (state.game.actionsRemaining < 1 || state.game.hasPassed) {
+                            state.game.turnState = TurnStates.CALCULATE_HAND;
+                            state.game.waitUntil = Time.time + 2f;
+                            state.game.hasPassed = false;
                             break;
                         }
                         
-                        gameData.turnState = TurnStates.BEGIN;
+                        state.game.turnState = TurnStates.BEGIN;
                         break;
                     case TurnStates.CALCULATE_HAND:
-                        if (Time.time >= gameData.waitUntil) {
-                            gameData.handsRemaining--;
-                            gameData.currentPoints += CalculateZonePoints(CardZone.PLAYER);
+                        if (Time.time >= state.game.waitUntil) {
+                            state.game.handsRemaining--;
+                            state.game.currentPoints += CalculateZonePoints(CardZone.PLAYER);
                             uiData.dirty = true;
-                            if (gameData.currentPoints >= gameData.pointsGoal) {
-                                gameData.state = GameState.END;
+                            if (state.game.currentPoints >= state.game.pointsGoal) {
+                                state.game.state = GameState.END;
                             }
                             else {
-                                if (gameData.handsRemaining > 0) {
+                                if (state.game.handsRemaining > 0) {
                                     SetAllCardsInZoneFaceDown(CardZone.PLAYER, true);
                                     DiscardAllCardsInZone(CardZone.PLAYER);
                                     DrawCards(CardZone.PLAYER, 5);
-                                    gameData.state = GameState.START;
-                                    gameData.actionsRemaining = startingActions;
-                                    InitHandStartData(ref _handStartData);
+                                    state.game.state = GameState.START;
+                                    state.game.actionsRemaining = startingActions;
+                                    InitHandStartData(ref state.handStart);
                                     uiData.dirty = true;
                                 }
                                 else {
-                                    gameData.state = GameState.END;
+                                    state.game.state = GameState.END;
                                 }
                             }
                         }
@@ -894,8 +888,10 @@ public enum TurnStates {
 
 public struct CardData {
     public int id;
+    public CardKind kind;
     public int value;
     public CardSuit suit;
+    public TarotCardType tarotType;
     public CardZone zone;
     public bool facedown;
     public bool visualDirty;
@@ -942,7 +938,7 @@ public enum CardZone {
     COUNT
 }
 
-struct HandStartData {
+public struct HandStartData {
     public HandStartState state;
     
     public int playerSelectedCount;

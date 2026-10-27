@@ -13,11 +13,11 @@ public class TarotCardVisual : AbstractCardVisual
     [SerializeField] private GameObject frontFace;
     [SerializeField] private GameObject backFace;
 
-    private TarotCardData[] cards;
+    private GameStateData state;
 
-    public void Initialize(TarotCardData[] cards, int cardId)
+    public void Initialize(GameStateData state, int cardId)
     {
-        this.cards = cards;
+        this.state = state;
 
         base.Initialize(cardId);
     }
@@ -27,8 +27,8 @@ public class TarotCardVisual : AbstractCardVisual
             return;
 
 
-        TarotCardData card = cards[cardId];
+        CardData card = state.cards[cardId];
 
-        nameText.text = card.type.GetName();
+        nameText.text = card.tarotType.GetName();
     }
 }

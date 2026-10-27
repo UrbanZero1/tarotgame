@@ -1,12 +1,6 @@
 using System;
 using UnityEngine;
 
-[Serializable]
-public struct TarotCardData {
-    public int cardId;
-    public TarotCardType type;
-}
-
 public enum TarotCardType {
     WheelOfFortune,
     TheMagician,
@@ -128,5 +122,19 @@ public static class TarotCardTypeExtensions {
             default:
                 return "No description available.";
         }
+    }
+
+    public static void PlayCardEffect(this TarotCardType type, ref GameData data) {
+        switch (type) {
+            case TarotCardType.WheelOfFortune:
+                PlayWheelOfFortune(ref data);
+                break;
+        }
+    }
+
+    private static void PlayWheelOfFortune(ref GameData data) {
+        int randomValue = UnityEngine.Random.Range(1, 14); // Random number between 1 and 13
+        Debug.Log($"Wheel of Fortune effect: All face-down cards' values become {randomValue}.");
+
     }
 }

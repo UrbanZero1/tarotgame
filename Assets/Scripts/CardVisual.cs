@@ -14,10 +14,10 @@ public class CardVisual : AbstractCardVisual
     [SerializeField] private Sprite frontFace;
     [SerializeField] private Sprite backFace;
 
-    private CardData[] cards;
+    private GameStateData state;
 
-    public void Initialize(CardData[] cards, int cardId) {
-        this.cards = cards;
+    public void Initialize(GameStateData state, int cardId) {
+        this.state = state;
 
         base.Initialize(cardId);
     }
@@ -25,7 +25,7 @@ public class CardVisual : AbstractCardVisual
     public override void UpdateVisuals() {
         if (!IsValidCardId()) return;
 
-        CardData card = cards[cardId];
+        CardData card = state.cards[cardId];
         
         if (card.facedown) {
             suitText.text = "";
