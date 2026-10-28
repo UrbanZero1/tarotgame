@@ -71,6 +71,25 @@ public class CasinoManager : MonoBehaviour
         }
         
     }
+
+    public void GoToLobby()
+    {
+        SceneManager.LoadScene("Lobby");
+    }
+
+    public void StartGame()
+    {
+        StartMenu.SetActive(true);
+        LevelMenu.SetActive(true);
+       
+    }
+
+    public void EnterGame()
+    {
+        SceneManager.LoadScene("Cardgame");
+        LevelMenu.SetActive(false);
+    }
+
     public void GoToFloor(int floor)
     {
         SceneManager.LoadScene(floorScenes[floor]);
