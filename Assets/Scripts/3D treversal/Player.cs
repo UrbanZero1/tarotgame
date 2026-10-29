@@ -30,8 +30,8 @@ public class Player : MonoBehaviour
         casinoManager = FindFirstObjectByType<CasinoManager>();
 
         // Lock cursor for first-person camera
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        //Cursor.lockState = CursorLockMode.Locked;
+        //Cursor.visible = false;
 
         GameObject.Find("InteractionPrompt");
     }
