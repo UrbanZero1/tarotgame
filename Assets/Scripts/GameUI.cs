@@ -11,6 +11,7 @@ public class GameUI : MonoBehaviour {
     [SerializeField] private TMP_Text handsRemainingText;
     [SerializeField] private TMP_Text actionsRemainingText;
     [SerializeField] private Button drawButton;
+    [SerializeField] private Button playTarotButton;
     [SerializeField] private Button discardButton;
     [SerializeField] private Button replaceButton;
     [SerializeField] private Button passButton;
@@ -31,6 +32,7 @@ public class GameUI : MonoBehaviour {
         replaceButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.REPLACE));
         passButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PASS));
         restartButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.RESTART));
+        playTarotButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PLAY_TAROT));
         exitButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.EXIT));
     }
 
@@ -58,6 +60,10 @@ public class GameUI : MonoBehaviour {
         drawButton.gameObject.SetActive(enable);
     }
     
+    public void EnablePlayTarotButton(bool enable) {
+        playTarotButton.gameObject.SetActive(enable);
+    }
+    
     public void EnableDiscardButton(bool enable) {
         discardButton.gameObject.SetActive(enable);
     }
@@ -80,6 +86,7 @@ public class GameUI : MonoBehaviour {
 
     public void DisableAllButtons() {
         drawButton.gameObject.SetActive(false);
+        playTarotButton.gameObject.SetActive(false);
         discardButton.gameObject.SetActive(false);
         replaceButton.gameObject.SetActive(false);
         passButton.gameObject.SetActive(false);

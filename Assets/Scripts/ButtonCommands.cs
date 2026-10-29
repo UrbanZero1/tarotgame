@@ -7,4 +7,5 @@ public enum ButtonCommands {
     PASS,
     RESTART,
     EXIT,
+    PLAY_TAROT
 }

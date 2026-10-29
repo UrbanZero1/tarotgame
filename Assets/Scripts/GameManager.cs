@@ -2,14 +2,13 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
-//using UnityEditor.U2D;
-using UnityEngine.PlayerLoop;
 
 public class GameManager : MonoBehaviour
 {
-    public const int MAX_CARDS = 52;
-    public const int MAX_TOTAL_CARDS = MAX_CARDS + STARTING_TAROT_CARDS;
-    private const int MAX_CARDS_PER_ZONE = MAX_CARDS;
+    public const int REGULARCARDS = 52;
+    public const int TAROT_CARD_OFFSET = REGULARCARDS;
+    public const int MAX_TOTAL_CARDS = REGULARCARDS + STARTING_TAROT_CARDS;
+    private const int MAX_CARDS_PER_ZONE = REGULARCARDS;
     public const int INVALID_CARD_ID = -1;
     public const int STARTING_TAROT_CARDS = 3;
     
@@ -106,12 +105,25 @@ public class GameManager : MonoBehaviour
         
         List<TarotCardType> remainingCards = new List<TarotCardType>(allTarotCardTypes);
         
-        for (int i = 0; i < STARTING_TAROT_CARDS; i++) {
+        
+        CardData WheelOfFortune = new CardData {
+            id = TAROT_CARD_OFFSET,
+            kind = CardKind.Tarot,
+            tarotType = TarotCardType.WheelOfFortune,
+            zone = CardZone.TAROT,
+            visualDirty = true,
+        };
+        
+        state.cards[TAROT_CARD_OFFSET] = WheelOfFortune;
+        SpawnTarotCard(WheelOfFortune);
+        AddCardToZone(TAROT_CARD_OFFSET, CardZone.TAROT);
+        
+        for (int i = 1; i < STARTING_TAROT_CARDS; i++) {
             int randomIndex = UnityEngine.Random.Range(0, remainingCards.Count);
             TarotCardType selectedType = remainingCards[randomIndex];
             remainingCards.RemoveAt(randomIndex);
 
-            int cardId = MAX_CARDS + i;
+            int cardId = TAROT_CARD_OFFSET + i;
             CardData tarotCard = new CardData {
                 id = cardId,
                 kind = CardKind.Tarot,
@@ -251,12 +263,12 @@ public class GameManager : MonoBehaviour
     private void ShowToolTip(AbstractCardVisual visual, PointerEventData eventData) {
         tooltipData.visible = true;
         tooltipData.position = eventData.position;
-        tooltipData.hoveredTarotCard = visual as TarotCardVisual;
+        tooltipData.hoveredCardId = visual.cardId;
     }
     
     private void HideToolTip() {
         tooltipData.visible = false;
-        tooltipData.hoveredTarotCard = null;
+        tooltipData.hoveredCardId = INVALID_CARD_ID;
     }
     
     private void UpdateToolTip() {
@@ -265,10 +277,9 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        if (!tooltipData.hoveredTarotCard) return;
-        
-        int cardId = tooltipData.hoveredTarotCard.cardId;
+        if (tooltipData.hoveredCardId == INVALID_CARD_ID) return;
 
+        int cardId = tooltipData.hoveredCardId;
         uiData.UI.tooltip.Show(state.cards[cardId].tarotType.GetDescription(), tooltipData.position);
     }
 
@@ -289,7 +300,6 @@ public class GameManager : MonoBehaviour
 
     private void OnCardPointerPressed(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
-        if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
         
         CardInteractionData interaction = state.cardInteractions[cardId];
@@ -301,7 +311,6 @@ public class GameManager : MonoBehaviour
 
     private void OnCardPointerReleased(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
-        if (visual is TarotCardVisual) return;
         if (!IsValidCardId(cardId)) return;
 
         CardInteractionData interaction = state.cardInteractions[cardId];
@@ -333,6 +342,14 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.PLAY:
                 switch (state.game.turnState) {
+                    case TurnStates.PLAY_TAROT:
+                        if (IsTarotCardSelected(cardId)) {
+                            if (state.game.cardsSelected.Count < 1) {
+                                state.game.cardsSelected.Add(cardId);
+                            }
+                            state.game.cardsSelected[0] = cardId;
+                        }
+                        break;
                     case TurnStates.REPLACE:
                         if (state.cards[cardId].zone == CardZone.PLAYER) {
                             if (state.game.cardsSelected.Count < 1) {
@@ -354,6 +371,12 @@ public class GameManager : MonoBehaviour
                 state.game.turnState = TurnStates.DRAW;
                 uiData.dirty = true;
                 break;
+            case ButtonCommands.PLAY_TAROT:
+                state.game.actionsRemaining--;
+                state.game.turnState = TurnStates.PLAY_TAROT;
+                state.game.cardsSelected.Clear();
+                uiData.dirty = true;
+                break;
             case ButtonCommands.DISCARD:
                 state.game.turnState = TurnStates.DISCARD;
                 uiData.dirty = true;
@@ -363,7 +386,7 @@ public class GameManager : MonoBehaviour
                 state.game.turnState = TurnStates.END;
                 break;
             case ButtonCommands.REPLACE:
-                state.game.cardsSelected = new List<int>();
+                state.game.cardsSelected.Clear();
                 state.game.turnState = TurnStates.REPLACE;
                 uiData.dirty = true;
                 break;
@@ -439,13 +462,13 @@ public class GameManager : MonoBehaviour
     }
 
     private void PopulateDeckZone() {
-        for (int cardId = 0; cardId < MAX_CARDS; cardId++) {
+        for (int cardId = 0; cardId < REGULARCARDS; cardId++) {
             AddCardToZone(cardId, CardZone.DECK);
         }
     }
 
     private bool CreateDefaultDeck(ref CardData[] deck){
-        if (deck == null || deck.Length < MAX_CARDS) return false;
+        if (deck == null || deck.Length < REGULARCARDS) return false;
 
         int cardId = 0;
 
@@ -653,6 +676,12 @@ public class GameManager : MonoBehaviour
                         uiData.UI.UpdateMiddleText("Select an action");
                         uiData.UI.EnableDrawButton(true);
                         uiData.UI.EnablePassButton(true);
+                        uiData.UI.EnablePlayTarotButton(true);
+                        break;
+                    case TurnStates.PLAY_TAROT:
+                        uiData.UI.DisableAllButtons();
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateMiddleText("Select a Tarot card to play");
                         break;
                     case TurnStates.DRAW:
                         uiData.UI.DisableAllButtons();
@@ -729,6 +758,23 @@ public class GameManager : MonoBehaviour
 
     }
     
+    private bool IsTarotCardSelected(int cardId) {
+        if (!IsValidCardId(cardId)) return false;
+        return state.cards[cardId].kind == CardKind.Tarot;
+    }
+    
+    private void RemoveTarotCard(int cardId) {
+        if (!IsValidCardId(cardId)) return;
+        if (state.cards[cardId].kind != CardKind.Tarot) return;
+
+        RemoveCardFromZone(cardId, CardZone.TAROT);
+        state.cards[cardId] = default;
+        Destroy(cardVisuals[cardId].gameObject);
+        cardVisuals[cardId] = null;
+        ResetCardInteraction(cardId);
+        HideToolTip();
+    }
+    
     private void DiscardAllCardsInZone(CardZone zone) {
         CardZoneData zoneData = state.zones[(int)zone];
         Debug.Log($"Discarding all cards in zone {zone} ({zoneData.count} cards)");
@@ -741,6 +787,22 @@ public class GameManager : MonoBehaviour
         foreach (int cardId in cardIds) {
             MoveCard(cardId, CardZone.DISCARD);
         }
+    }
+
+    private void BeginSequence(GameSequence sequence, float duration) {
+        state.sequence = new SequenceState {
+            sequence = sequence,
+            elapsed = 0f,
+            minDuration = duration,
+            animationComplete = false
+        };
+    }
+
+    private void UpdateSequence(float deltaTime) {
+        if (state.sequence.sequence == GameSequence.NONE) return;
+
+        state.sequence.elapsed += deltaTime;
+
     }
 
     // Update is called once per frame
@@ -785,6 +847,17 @@ public class GameManager : MonoBehaviour
                     case TurnStates.BEGIN:
                         break;
                     case TurnStates.DRAW:
+                        break;
+                    case TurnStates.PLAY_TAROT:
+                        if (state.game.cardsSelected.Count > 0) {
+                            int cardId = state.game.cardsSelected[0];
+                            if (IsTarotCardSelected(cardId)) {
+                                state.cards[cardId].tarotType.PlayCardEffect(ref state);
+                                RemoveTarotCard(cardId);
+                                state.game.cardsSelected.Clear();
+                                state.game.turnState = TurnStates.END;
+                            }
+                        }
                         break;
                     case TurnStates.REPLACE:
                         if (state.game.cardsSelected.Count > 0) {
@@ -883,7 +956,8 @@ public enum TurnStates {
     REPLACE,
     DISCARD,
     END,
-    CALCULATE_HAND
+    CALCULATE_HAND,
+    PLAY_TAROT
 }
 
 public struct CardData {
@@ -924,9 +998,9 @@ public enum CardSuit {
 }
 
 struct TooltipData {
+    public int hoveredCardId;
     public bool visible;
     public Vector2 position;
-    public TarotCardVisual hoveredTarotCard;
 }
 
 public enum CardZone {
@@ -959,4 +1033,17 @@ public enum GameState {
     START,
     PLAY,
     END
+}
+
+public enum GameSequence {
+    REVEAL_CARDS,
+    HIDE_CARDS,
+    NONE,
+}
+
+public struct SequenceState {
+    public GameSequence sequence;
+    public float elapsed;
+    public float minDuration;
+    public bool animationComplete;
 }

@@ -124,7 +124,7 @@ public static class TarotCardTypeExtensions {
         }
     }
 
-    public static void PlayCardEffect(this TarotCardType type, ref GameData data) {
+    public static void PlayCardEffect(this TarotCardType type, ref GameStateData data) {
         switch (type) {
             case TarotCardType.WheelOfFortune:
                 PlayWheelOfFortune(ref data);
@@ -132,9 +132,13 @@ public static class TarotCardTypeExtensions {
         }
     }
 
-    private static void PlayWheelOfFortune(ref GameData data) {
+    private static void PlayWheelOfFortune(ref GameStateData data) {
         int randomValue = UnityEngine.Random.Range(1, 14); // Random number between 1 and 13
-        Debug.Log($"Wheel of Fortune effect: All face-down cards' values become {randomValue}.");
 
+        CardZoneData handInfo = data.zones[(int)CardZone.PLAYER];
+
+        for (int i = 0; i < handInfo.count; i++) {
+            data.cards[handInfo.cardIds[i]].value = randomValue;
+        }
     }
 }

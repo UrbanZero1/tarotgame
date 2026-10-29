@@ -28,7 +28,7 @@ public class TarotCardTooltip : MonoBehaviour
     
     public void Show(string text, Vector2 screenPosition) {
         tooltipText.text = text;
-        tooltipRect.gameObject.SetActive(true);
+        gameObject.SetActive(true);
         SetPosition(screenPosition);
     }
 
@@ -37,7 +37,7 @@ public class TarotCardTooltip : MonoBehaviour
     }
     
     public void Hide() {
-        tooltipRect.gameObject.SetActive(false);
+        gameObject.SetActive(false);
     }
     
 

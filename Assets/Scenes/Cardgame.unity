@@ -342,12 +342,12 @@ MonoBehaviour:
   m_GameObject: {fileID: 253497084}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56666c5a40171f54783dd416a44f42bf, type: 3}
+  m_Script: {fileID: 11500000, guid: c49b4cc203aa6414fae5c798d1d0e7d6, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.Physics2DRaycaster
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.PhysicsRaycaster
   m_EventMask:
     serializedVersion: 2
-    m_Bits: 33
+    m_Bits: 4294967295
   m_MaxRayIntersections: 0
 --- !u!1 &397713156
 GameObject:
@@ -691,6 +691,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 386919877651252763, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 879062875373531235, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_RaycastTarget
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 1230591973426516092, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -819,9 +827,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5690098272391194967, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5769941115048350609, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_RaycastTarget
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5950008052698384469, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
       propertyPath: m_Name
       value: GameUI
+      objectReference: {fileID: 0}
+    - target: {fileID: 5956978258617402236, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_RaycastTarget
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7765141577003877225, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
       propertyPath: m_AnchorMax.y
@@ -837,6 +857,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7765141577003877225, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
       propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9059925610189614308, guid: a32f55a55e7172749a68c79bf973fb84, type: 3}
+      propertyPath: m_RaycastTarget
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
