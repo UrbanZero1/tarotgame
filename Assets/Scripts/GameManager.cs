@@ -40,8 +40,8 @@ public class GameManager : MonoBehaviour
     {
         state.cards = new CardData[MAX_TOTAL_CARDS];
         state.cardInteractions = new CardInteractionData[MAX_TOTAL_CARDS];
-        CreateDefaultDeck(ref state.cards);
         InitZones();
+        CreateDefaultDeck(ref state.cards);
         PopulateDeckZone();
         ShuffleZone(CardZone.DECK);
         uiData.UI = uiObject.GetComponent<GameUI>();
@@ -81,7 +81,6 @@ public class GameManager : MonoBehaviour
 
     /*
      * RULES OF THE GAME
-     * Both players draw 5 cards
      */
     private void GameStart() {
         CreateStartingTarotCards();
@@ -203,20 +202,6 @@ public class GameManager : MonoBehaviour
         cardVisuals[cardId] = visual;
 
         CardZone zone = state.cards[cardId].zone;
-
-        if (!FindZoneView(zone, out ZoneView view))
-        {
-            Debug.LogError($"No ZoneView configured for zone {zone}.");
-            return;
-        }
-
-        if (view.anchor == null)
-        {
-            Debug.LogError($"ZoneView for {zone} has no anchor assigned.");
-            return;
-        }
-
-        visual.transform.SetParent(view.anchor, false);
         Debug.Log($"Spawned {state.cards[cardId]} in {zone}");
         
         MarkZoneDirty(zone);
@@ -464,6 +449,7 @@ public class GameManager : MonoBehaviour
     private void PopulateDeckZone() {
         for (int cardId = 0; cardId < REGULARCARDS; cardId++) {
             AddCardToZone(cardId, CardZone.DECK);
+            SpawnCard(cardId);
         }
     }
 
@@ -480,12 +466,13 @@ public class GameManager : MonoBehaviour
                     value = value,
                     suit = suit,
                     zone = CardZone.DECK,
-                    facedown = false,
+                    facedown = true,
                     visualDirty = true
                 };
                 cardId++;
             }
         }
+        
         return true;
     }
     private void DrawCards(CardZone destination, int amount, bool facedown = true) {
@@ -502,8 +489,6 @@ public class GameManager : MonoBehaviour
             card.visualDirty = true;
 
             state.cards[cardId] = card;
-
-            SpawnCard(cardId);
         }
     }
 
@@ -550,44 +535,13 @@ public class GameManager : MonoBehaviour
 
     // ReSharper disable Unity.PerformanceAnalysis
     private void LayoutZone(CardZone zone) {
-        if (!FindZoneView(zone, out ZoneView view)) {
-            Debug.Log($"Couldn't find ZoneView {zone}");
-            return;
-        }
+        FindZoneView(zone, out ZoneView view);
         CardZoneData zoneData = state.zones[(int)zone];
-        
-        AbstractCardVisual[] visuals = cardVisuals;
-
-        if (view.anchor == null || view.layout == null) {
-            for (int i = 0; i < zoneData.count; i++) {
-                int cardId = zoneData.cardIds[i];
-                AbstractCardVisual visual = visuals[cardId];
-                if (!visual) continue;
-
-                visual.transform.SetParent(null, false);
-                visual.gameObject.SetActive(false);
-            }
-            return;
-        }
-        
-        // TODO: Combine this with the above loop to avoid iterating twice
-
-        for (int i = 0; i < zoneData.count; i++) {
-            int cardId = zoneData.cardIds[i];
-            AbstractCardVisual visual = visuals[cardId];
-            if (!visual) continue;
-
-            visual.transform.SetParent(view.anchor, false);
-            visual.gameObject.SetActive(true);
-        }
-        
-
-        if (view.layout) {
-            view.layout.Layout(
-                zoneData.cardIds,
-                zoneData.count,
-                visuals);
-        }
+        view.layout.Layout(
+            zoneData.cardIds,
+            zoneData.count,
+            cardVisuals,
+            view.anchor);
     }
 
     private bool FindZoneView(CardZone zone, out ZoneView result) {
@@ -1046,4 +1000,20 @@ public struct SequenceState {
     public float elapsed;
     public float minDuration;
     public bool animationComplete;
+}
+
+public enum CardValue {
+    Ace = 1,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Ten,
+    Jack,
+    Queen,
+    King
 }

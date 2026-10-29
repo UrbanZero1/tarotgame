@@ -109,7 +109,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7793505242504584563
 RectTransform:
   m_ObjectHideFlags: 0
@@ -246,7 +246,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3161495187793709237
 RectTransform:
   m_ObjectHideFlags: 0
@@ -414,8 +414,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CardVisual
   suitText: {fileID: 2849271207576062453}
   valueText: {fileID: 5263454180456336679}
-  frontFace: {fileID: 0}
-  backFace: {fileID: 0}
+  cardRenderer: {fileID: 8461936332630854668}
+  cardArtTable: {fileID: 11400000, guid: 6c28e9164c39c2645a06901ff7d1a07e, type: 2}
 --- !u!65 &1196883889724321753
 BoxCollider:
   m_ObjectHideFlags: 0

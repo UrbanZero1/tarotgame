@@ -1,0 +1,123 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b8ee5265b3129440aef1fb4e4757018, type: 3}
+  m_Name: CardArtTable
+  m_EditorClassIdentifier: Assembly-CSharp::CardArtTable
+  table:
+  - cardName: Card_Back
+    cardArt: {fileID: 21300000, guid: a4a4641ff9e9b1f4d8e173708e64a8cd, type: 3}
+  - cardName: Clubs_2
+    cardArt: {fileID: 21300000, guid: 0bd48a8d9ab4b0148a10277118413a20, type: 3}
+  - cardName: Clubs_3
+    cardArt: {fileID: 21300000, guid: 821d3fb13a396044d86d7a313416abd0, type: 3}
+  - cardName: Clubs_4
+    cardArt: {fileID: 21300000, guid: 2275ac494aae72541bc40bdfb89f8e69, type: 3}
+  - cardName: Clubs_5
+    cardArt: {fileID: 21300000, guid: ac189b87f885cb8488911e49286b3946, type: 3}
+  - cardName: Clubs_6
+    cardArt: {fileID: 21300000, guid: be0e9c40a98c48443857c7a48a06bc69, type: 3}
+  - cardName: Clubs_7
+    cardArt: {fileID: 21300000, guid: 693b65afc5bfea644ade67162e62ea7e, type: 3}
+  - cardName: Clubs_8
+    cardArt: {fileID: 21300000, guid: fae05449f2a97b649970405dfc22522d, type: 3}
+  - cardName: Clubs_9
+    cardArt: {fileID: 21300000, guid: a2ec3637a24d2c242ab76dca2ec85b2e, type: 3}
+  - cardName: Clubs_10
+    cardArt: {fileID: 21300000, guid: 7ff22482b42211e4daae53d1fe83f08c, type: 3}
+  - cardName: Clubs_A
+    cardArt: {fileID: 21300000, guid: b9e24f6388aaf414380a41eb4328e998, type: 3}
+  - cardName: Clubs_Jack
+    cardArt: {fileID: 21300000, guid: 184f86e35c3f3594a93844565f697e4e, type: 3}
+  - cardName: Clubs_King
+    cardArt: {fileID: 21300000, guid: 0c82b1ef9c6e83c49a0150ccf0095dea, type: 3}
+  - cardName: Clubs_Queen
+    cardArt: {fileID: 21300000, guid: 3f0a096034253494aac8bed3e7bf4014, type: 3}
+  - cardName: Diamonds_2
+    cardArt: {fileID: 21300000, guid: 6d0633d35410b264699cfc7031a2e10a, type: 3}
+  - cardName: Diamonds_3
+    cardArt: {fileID: 21300000, guid: 04483f8b61783084b94c1a4d8e975f2c, type: 3}
+  - cardName: Diamonds_4
+    cardArt: {fileID: 21300000, guid: 52e28f9baebdfe6478f1ebf033bc3c3f, type: 3}
+  - cardName: Diamonds_5
+    cardArt: {fileID: 21300000, guid: c28391e169bbf8c4babf20446dba4450, type: 3}
+  - cardName: Diamonds_6
+    cardArt: {fileID: 21300000, guid: debfa598b7f75d940b3d27de934e5e72, type: 3}
+  - cardName: Diamonds_7
+    cardArt: {fileID: 21300000, guid: 5d60a6474572792438e91833d1036f18, type: 3}
+  - cardName: Diamonds_8
+    cardArt: {fileID: 21300000, guid: 6c5894b39e265c245bcd97e850a234d7, type: 3}
+  - cardName: Diamonds_9
+    cardArt: {fileID: 21300000, guid: 4efffd2e4a43cb246bfd9d4042cce900, type: 3}
+  - cardName: Diamonds_10
+    cardArt: {fileID: 21300000, guid: 5489af19f34859541b271d84b6e622e4, type: 3}
+  - cardName: Diamonds_A
+    cardArt: {fileID: 21300000, guid: e9fe78f83aad33147bb9f32e335184f2, type: 3}
+  - cardName: Diamonds_Jack
+    cardArt: {fileID: 21300000, guid: 2c66ad4530843314cb2d437e66a2bea5, type: 3}
+  - cardName: Diamonds_King
+    cardArt: {fileID: 21300000, guid: 1ad0c2c59e377a54fa882e493ffd9b84, type: 3}
+  - cardName: Diamonds_Queen
+    cardArt: {fileID: 21300000, guid: 55dc6e842dcb4eb499b6d8d468bce406, type: 3}
+  - cardName: Hearts_2
+    cardArt: {fileID: 21300000, guid: 19c4c461b0d69b9489cc73c8be9622f3, type: 3}
+  - cardName: Hearts_3
+    cardArt: {fileID: 21300000, guid: d013e9c3d370e5645b70345ba61d7757, type: 3}
+  - cardName: Hearts_4
+    cardArt: {fileID: 21300000, guid: d1d6abb61cfa24947a6e0ba3bbc75b61, type: 3}
+  - cardName: Hearts_5
+    cardArt: {fileID: 21300000, guid: f3351575b4752304fa67bece3cfc3805, type: 3}
+  - cardName: Hearts_6
+    cardArt: {fileID: 21300000, guid: c76687e7dc7f2ec4ebff6445e69774b3, type: 3}
+  - cardName: Hearts_7
+    cardArt: {fileID: 21300000, guid: 83c46c06ab4170642864b225652669a3, type: 3}
+  - cardName: Hearts_8
+    cardArt: {fileID: 21300000, guid: c3e54590d5471d242a339e4799668375, type: 3}
+  - cardName: Hearts_9
+    cardArt: {fileID: 21300000, guid: 6bd26ee098e34cf4096c8180e387febb, type: 3}
+  - cardName: Hearts_10
+    cardArt: {fileID: 21300000, guid: eba019f4a95971846b35971da218e143, type: 3}
+  - cardName: Hearts_A
+    cardArt: {fileID: 21300000, guid: cc99ddb1c322bc64e9db38852947a075, type: 3}
+  - cardName: Hearts_Jack
+    cardArt: {fileID: 21300000, guid: 9410ea173dd538d468435db255a7ce75, type: 3}
+  - cardName: Hearts_King
+    cardArt: {fileID: 21300000, guid: 4128e7cf1e74b314b918a62f6b9cb015, type: 3}
+  - cardName: Hearts_Queen
+    cardArt: {fileID: 21300000, guid: 75b4b8af469a6084fb19e0dd0eab20af, type: 3}
+  - cardName: Joker
+    cardArt: {fileID: 21300000, guid: c09f72a2f0885f442af93377e7d944d0, type: 3}
+  - cardName: Spades_2
+    cardArt: {fileID: 21300000, guid: 13fd2e9d0b23c7042a9ef958df789f91, type: 3}
+  - cardName: Spades_3
+    cardArt: {fileID: 21300000, guid: dba3ed57a9d5f0246a57179a978f790f, type: 3}
+  - cardName: Spades_4
+    cardArt: {fileID: 21300000, guid: 20a06a32470a5654aabd3719c7ade657, type: 3}
+  - cardName: Spades_5
+    cardArt: {fileID: 21300000, guid: 57eea83527d7ad64b9a040b331d6e690, type: 3}
+  - cardName: Spades_6
+    cardArt: {fileID: 21300000, guid: 8d1779911b420014a94a2062e57fbb21, type: 3}
+  - cardName: Spades_7
+    cardArt: {fileID: 21300000, guid: 394f9d04dcfbb454fb1978a60dc9ec57, type: 3}
+  - cardName: Spades_8
+    cardArt: {fileID: 21300000, guid: 7e91429c5e69b054b90fd588c1188ec8, type: 3}
+  - cardName: Spades_9
+    cardArt: {fileID: 21300000, guid: 556f573a5f803ba4488f29eb0b4487d7, type: 3}
+  - cardName: Spades_10
+    cardArt: {fileID: 21300000, guid: d1fbcea8f71afd74ebdb0cb8bb3009fb, type: 3}
+  - cardName: Spades_A
+    cardArt: {fileID: 21300000, guid: 5b9cb8454c89e4646aefb6b7222bce1a, type: 3}
+  - cardName: Spades_Jack
+    cardArt: {fileID: 21300000, guid: f7bb74e3e744ebf4282d0be392bb17e5, type: 3}
+  - cardName: Spades_King
+    cardArt: {fileID: 21300000, guid: c0af7baf59af98e4e93fbd89f62fd0ba, type: 3}
+  - cardName: Spades_Queen
+    cardArt: {fileID: 21300000, guid: a608945cab2aca148bfac80b33277be3, type: 3}
