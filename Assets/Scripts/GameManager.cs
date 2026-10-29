@@ -93,7 +93,6 @@ public class GameManager : MonoBehaviour
         state.game.state = GameState.START;
         state.game.currentPoints = 0;
         state.game.pointsGoal = pointsGoal;
-        state.game.currentTurn = 0;
         state.game.cardsSelected = new List<int>();
         state.game.actionsRemaining = startingActions;
         state.game.handsRemaining = startingHands;
@@ -610,7 +609,6 @@ public class GameManager : MonoBehaviour
 
         state.game.state = GameState.PLAY;
         state.game.turnState = TurnStates.BEGIN;
-        state.game.currentTurn = 1;
         uiData.dirty = true;
     }
 
@@ -986,22 +984,6 @@ public class GameManager : MonoBehaviour
         MoveCardsWithAnimation(cardIds, CardZone.DISCARD);
     }
 
-    private void BeginSequence(GameSequence sequence, float duration) {
-        state.sequence = new SequenceState {
-            sequence = sequence,
-            elapsed = 0f,
-            minDuration = duration,
-            animationComplete = false
-        };
-    }
-
-    private void UpdateSequence(float deltaTime) {
-        if (state.sequence.sequence == GameSequence.NONE) return;
-
-        state.sequence.elapsed += deltaTime;
-
-    }
-
     // Update is called once per frame
     void Update()
     {
@@ -1062,7 +1044,6 @@ public class GameManager : MonoBehaviour
                     }
                         break;
                     case TurnStates.END:
-                        state.game.currentTurn++;
                         uiData.dirty = true;
                         if (state.game.actionsRemaining < 1 || state.game.hasPassed) {
                             state.game.turnState = TurnStates.CALCULATE_HAND;
@@ -1120,11 +1101,10 @@ public struct UIData {
 public struct GameData {
     public GameState state;
     public TurnStates turnState;
-    public int currentTurn;
     public float waitUntil;
     public int handsRemaining, actionsRemaining;
     public int currentPoints, pointsGoal;
-    public bool hasPassed, isNewHand;
+    public bool hasPassed;
     public List<int> cardsSelected;
 }
 
@@ -1208,8 +1188,6 @@ public struct HandStartData {
     
     public int playerSelectedCount;
     public int[] playerSelectedCards;
-
-    public float waitUntil;
 }
 
 public enum HandStartState {
@@ -1224,33 +1202,4 @@ public enum GameState {
     START,
     PLAY,
     END
-}
-
-public enum GameSequence {
-    REVEAL_CARDS,
-    HIDE_CARDS,
-    NONE,
-}
-
-public struct SequenceState {
-    public GameSequence sequence;
-    public float elapsed;
-    public float minDuration;
-    public bool animationComplete;
-}
-
-public enum CardValue {
-    Ace = 1,
-    Two,
-    Three,
-    Four,
-    Five,
-    Six,
-    Seven,
-    Eight,
-    Nine,
-    Ten,
-    Jack,
-    Queen,
-    King
 }
