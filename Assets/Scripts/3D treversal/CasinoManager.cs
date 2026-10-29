@@ -87,7 +87,7 @@ public class CasinoManager : MonoBehaviour
     public void EnterGame()
     {
         SceneManager.LoadScene("Cardgame");
-        LevelMenu.SetActive(false);
+     
     }
 
     public void GoToFloor(int floor)
