@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -11,6 +12,7 @@ public abstract class AbstractCardVisual : MonoBehaviour,
     IPointerUpHandler
 {
     public int cardId { get; private set; } = -1;
+    public bool IsSelected { get; private set; }
 
     public event Action<AbstractCardVisual, PointerEventData> PointerEntered;
     public event Action<AbstractCardVisual, PointerEventData> PointerExited;
@@ -24,6 +26,17 @@ public abstract class AbstractCardVisual : MonoBehaviour,
     }
 
     public abstract void UpdateVisuals();
+
+    public virtual void SetSelected(bool selected)
+    {
+        IsSelected = selected;
+    }
+
+    public virtual void PlayFlip(bool facedown, float duration, Action onComplete)
+    {
+        UpdateVisuals();
+        onComplete?.Invoke();
+    }
 
     protected bool IsValidCardId()
     {

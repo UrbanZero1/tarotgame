@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 
@@ -16,6 +17,10 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int startingHands = 3;
     [SerializeField] private int startingActions = 3;
     [SerializeField] private int pointsGoal = 100;
+    [SerializeField] private float cardDrawAnimationDuration = 0.35f;
+    [SerializeField] private float cardDrawAnimationStagger = 0.08f;
+    [SerializeField] private float cardFlipAnimationDuration = 0.3f;
+    [SerializeField] private float cardFlipAnimationStagger = 0.08f;
 
 
     [Header("Zone Views")]
@@ -34,6 +39,7 @@ public class GameManager : MonoBehaviour
     public UIData uiData;
 
     private bool started = false;
+    private bool cardAnimationInProgress;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -84,7 +90,6 @@ public class GameManager : MonoBehaviour
      */
     private void GameStart() {
         CreateStartingTarotCards();
-        DrawCards(CardZone.PLAYER, 5);
         state.game.state = GameState.START;
         state.game.currentPoints = 0;
         state.game.pointsGoal = pointsGoal;
@@ -94,6 +99,8 @@ public class GameManager : MonoBehaviour
         state.game.handsRemaining = startingHands;
         state.handStart = new HandStartData{};
         InitHandStartData(ref state.handStart);
+        UpdateDirtyZones();
+        DrawCards(CardZone.PLAYER, 5);
         uiData.dirty = true;
         started = true;
     }
@@ -284,6 +291,8 @@ public class GameManager : MonoBehaviour
     }
 
     private void OnCardPointerPressed(AbstractCardVisual visual, PointerEventData eventData) {
+        if (cardAnimationInProgress) return;
+
         int cardId = visual.cardId;
         if (!IsValidCardId(cardId)) return;
         
@@ -295,6 +304,8 @@ public class GameManager : MonoBehaviour
     }
 
     private void OnCardPointerReleased(AbstractCardVisual visual, PointerEventData eventData) {
+        if (cardAnimationInProgress) return;
+
         int cardId = visual.cardId;
         if (!IsValidCardId(cardId)) return;
 
@@ -310,6 +321,8 @@ public class GameManager : MonoBehaviour
     }
     
     private void OnCardClicked(int cardId) {
+        if (cardAnimationInProgress) return;
+
         CardData card = state.cards[cardId];
         Debug.Log($"Card clicked: {card}");
 
@@ -317,13 +330,23 @@ public class GameManager : MonoBehaviour
             case GameState.START:
                 switch (state.handStart.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
-                        if (state.cards[cardId].facedown && state.cards[cardId].zone == CardZone.PLAYER) {
+                        if (!state.cards[cardId].facedown
+                            || state.cards[cardId].zone != CardZone.PLAYER) {
+                            break;
+                        }
+
+                        int selectedIndex = FindSelectedCardIndex(cardId);
+                        if (selectedIndex >= 0) {
+                            RemoveSelectedCard(selectedIndex);
+                        }
+                        else if (state.handStart.playerSelectedCount
+                            < state.handStart.playerSelectedCards.Length) {
                             state.handStart.playerSelectedCards[state.handStart.playerSelectedCount++] = cardId;
-                            state.cards[cardId].facedown = !state.cards[cardId].facedown;
-                            state.cards[cardId].visualDirty = true;
+                            cardVisuals[cardId]?.SetSelected(true);
                         }
                         break;
                 }
+
                 break;
             case GameState.PLAY:
                 switch (state.game.turnState) {
@@ -347,8 +370,35 @@ public class GameManager : MonoBehaviour
                 break;
         }
     }
+
+    private int FindSelectedCardIndex(int cardId)
+    {
+        for (int i = 0; i < state.handStart.playerSelectedCount; i++) {
+            if (state.handStart.playerSelectedCards[i] == cardId)
+                return i;
+        }
+
+        return -1;
+    }
+
+    private void RemoveSelectedCard(int selectedIndex)
+    {
+        int cardId = state.handStart.playerSelectedCards[selectedIndex];
+        cardVisuals[cardId]?.SetSelected(false);
+
+        for (int i = selectedIndex; i < state.handStart.playerSelectedCount - 1; i++) {
+            state.handStart.playerSelectedCards[i] =
+                state.handStart.playerSelectedCards[i + 1];
+        }
+
+        state.handStart.playerSelectedCount--;
+        state.handStart.playerSelectedCards[state.handStart.playerSelectedCount] =
+            INVALID_CARD_ID;
+    }
     
     private void OnButtonClicked(ButtonCommands command) {
+        if (cardAnimationInProgress && command != ButtonCommands.RESTART) return;
+
         switch (command) {
             case ButtonCommands.DRAW:
                 DrawCards(CardZone.PLAYER_DRAW, 1, false);
@@ -415,6 +465,37 @@ public class GameManager : MonoBehaviour
         MarkZoneDirty(dest);
     }
 
+    private void MoveCardsWithAnimation(int[] cardIds, CardZone destination) {
+        if (cardIds == null || cardIds.Length == 0)
+            return;
+
+        List<CardMoveAnimation> moves = new List<CardMoveAnimation>();
+        for (int i = 0; i < cardIds.Length; i++) {
+            int cardId = cardIds[i];
+            if (!IsValidCardId(cardId))
+                continue;
+
+            AbstractCardVisual visual = cardVisuals[cardId];
+            moves.Add(new CardMoveAnimation {
+                visual = visual,
+                startPosition = visual != null ? visual.transform.position : Vector3.zero,
+                targetPosition = Vector3.zero
+            });
+            MoveCard(cardId, destination);
+        }
+
+        UpdateDirtyZones();
+
+        for (int i = 0; i < moves.Count; i++) {
+            CardMoveAnimation move = moves[i];
+            if (move.visual != null)
+                move.targetPosition = move.visual.transform.position;
+            moves[i] = move;
+        }
+
+        StartCoroutine(AnimateCardMoves(moves));
+    }
+
     private void AddCardToZone(int cardId, CardZone zone) {
         CardZoneData zoneData = state.zones[(int)zone];
 
@@ -476,10 +557,15 @@ public class GameManager : MonoBehaviour
         return true;
     }
     private void DrawCards(CardZone destination, int amount, bool facedown = true) {
+        List<CardMoveAnimation> moves = new List<CardMoveAnimation>();
+
         for (int i = 0; i < amount; i++){
             int cardId = GetFirstCardInZone(CardZone.DECK);
 
-            if (cardId < 0) return;
+            if (cardId < 0) break;
+
+            AbstractCardVisual visual = cardVisuals[cardId];
+            Vector3 startPosition = visual != null ? visual.transform.position : Vector3.zero;
             
             MoveCard(cardId, destination);
 
@@ -489,7 +575,134 @@ public class GameManager : MonoBehaviour
             card.visualDirty = true;
 
             state.cards[cardId] = card;
+
+            moves.Add(new CardMoveAnimation {
+                visual = visual,
+                startPosition = startPosition,
+                targetPosition = startPosition,
+            });
         }
+
+        UpdateDirtyZones();
+
+        for (int i = 0; i < moves.Count; i++) {
+            CardMoveAnimation move = moves[i];
+            if (move.visual != null)
+                move.targetPosition = move.visual.transform.position;
+            moves[i] = move;
+        }
+
+        if (moves.Count > 0)
+            StartCoroutine(AnimateCardMoves(moves));
+    }
+
+    private IEnumerator PlaySelectionReveal() {
+        int selectedCount = state.handStart.playerSelectedCount;
+        int[] selectedCards = new int[selectedCount];
+        Array.Copy(state.handStart.playerSelectedCards, selectedCards, selectedCount);
+
+        for (int i = 0; i < selectedCards.Length; i++)
+            cardVisuals[selectedCards[i]]?.SetSelected(false);
+
+        yield return StartCoroutine(PlayFlipBatch(selectedCards, false));
+        yield return new WaitForSeconds(2f);
+        yield return StartCoroutine(PlayFlipBatch(selectedCards, true));
+
+        state.game.state = GameState.PLAY;
+        state.game.turnState = TurnStates.BEGIN;
+        state.game.currentTurn = 1;
+        uiData.dirty = true;
+    }
+
+    private IEnumerator PlayFlipBatch(int[] cardIds, bool facedown) {
+        if (cardIds == null || cardIds.Length == 0)
+            yield break;
+
+        cardAnimationInProgress = true;
+        int completedCount = 0;
+
+        for (int i = 0; i < cardIds.Length; i++) {
+            int cardId = cardIds[i];
+            if (!IsValidCardId(cardId)) {
+                completedCount++;
+                continue;
+            }
+
+            state.cards[cardId].facedown = facedown;
+            state.cards[cardId].visualDirty = false;
+            StartCoroutine(StartFlipAfterDelay(
+                cardId,
+                facedown,
+                cardFlipAnimationStagger * i,
+                () => completedCount++));
+        }
+
+        while (completedCount < cardIds.Length)
+            yield return null;
+
+        cardAnimationInProgress = false;
+    }
+
+    private IEnumerator StartFlipAfterDelay(
+        int cardId,
+        bool facedown,
+        float delay,
+        Action onComplete) {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        AbstractCardVisual visual = cardVisuals[cardId];
+        if (visual == null) {
+            onComplete?.Invoke();
+            yield break;
+        }
+
+        visual.PlayFlip(facedown, cardFlipAnimationDuration, onComplete);
+    }
+
+    private IEnumerator AnimateCardMoves(List<CardMoveAnimation> moves) {
+        cardAnimationInProgress = true;
+
+        float totalDuration = cardDrawAnimationStagger * Mathf.Max(0, moves.Count - 1)
+            + Mathf.Max(0.01f, cardDrawAnimationDuration);
+        float duration = Mathf.Max(0.01f, cardDrawAnimationDuration);
+        float elapsed = 0f;
+
+        for (int i = 0; i < moves.Count; i++) {
+            if (moves[i].visual != null)
+                moves[i].visual.transform.position = moves[i].startPosition;
+        }
+
+        while (elapsed < totalDuration) {
+            elapsed += Time.deltaTime;
+
+            for (int i = 0; i < moves.Count; i++) {
+                CardMoveAnimation move = moves[i];
+                if (move.visual == null) continue;
+
+                float moveElapsed = elapsed - cardDrawAnimationStagger * i;
+                if (moveElapsed <= 0f) {
+                    move.visual.transform.position = move.startPosition;
+                    continue;
+                }
+
+                float progress = Mathf.Clamp01(moveElapsed / duration);
+                move.visual.transform.position = Vector3.Lerp(
+                    move.startPosition,
+                    move.targetPosition,
+                    Mathf.SmoothStep(0f, 1f, progress));
+            }
+
+            yield return null;
+        }
+
+        for (int i = 0; i < moves.Count; i++) {
+            if (moves[i].visual != null)
+                moves[i].visual.transform.position = moves[i].targetPosition;
+        }
+
+        cardAnimationInProgress = false;
+        uiData.dirty = true;
     }
 
     private int GetFirstCardInZone(CardZone zone) {
@@ -572,6 +785,8 @@ public class GameManager : MonoBehaviour
     }
 
     private void UpdateCardInteractions() {
+        if (cardAnimationInProgress) return;
+
         float currentTime = Time.time;
         
         for (int cardId = 0; cardId < state.cardInteractions.Length; cardId++) {
@@ -679,22 +894,33 @@ public class GameManager : MonoBehaviour
     
     private void SetAllCardsInZoneFaceDown(CardZone zone, bool facedown) {
         CardZoneData zoneData = state.zones[(int)zone];
+        int[] cardIds = new int[zoneData.count];
 
         for (int i = 0; i < zoneData.count; i++) {
-            int cardId = zoneData.cardIds[i];
-            SetCardFaceDown(cardId, facedown);
+            cardIds[i] = zoneData.cardIds[i];
         }
+
+        StartCoroutine(PlayFlipBatch(cardIds, facedown));
     }
     
     private void SetCardFaceDown(int cardId, bool facedown) {
         if (!IsValidCardId(cardId)) return;
         
-        state.cards[cardId].facedown = facedown;
-        state.cards[cardId].visualDirty = true;
+        StartCoroutine(PlayFlipBatch(new[] { cardId }, facedown));
     }
     
     private void ReplaceCardFromDraw(int drawCardId, int replaceCardId) {
         CardZoneData zoneData = state.zones[(int)CardZone.PLAYER];
+        AbstractCardVisual drawVisual = IsValidCardId(drawCardId)
+            ? cardVisuals[drawCardId]
+            : null;
+        AbstractCardVisual replacedVisual = IsValidCardId(replaceCardId)
+            ? cardVisuals[replaceCardId]
+            : null;
+        Vector3 drawStart = drawVisual != null ? drawVisual.transform.position : Vector3.zero;
+        Vector3 replacedStart = replacedVisual != null
+            ? replacedVisual.transform.position
+            : Vector3.zero;
 
         for (int i = 0; i < zoneData.count; i++) {
             if (zoneData.cardIds[i] == replaceCardId) {
@@ -706,6 +932,25 @@ public class GameManager : MonoBehaviour
                 MarkZoneDirty(CardZone.PLAYER_DRAW);
                 MarkZoneDirty(CardZone.PLAYER);
                 MarkZoneDirty(CardZone.DISCARD);
+                UpdateDirtyZones();
+
+                List<CardMoveAnimation> moves = new List<CardMoveAnimation> {
+                    new CardMoveAnimation {
+                        visual = drawVisual,
+                        startPosition = drawStart,
+                        targetPosition = drawVisual != null
+                            ? drawVisual.transform.position
+                            : Vector3.zero
+                    },
+                    new CardMoveAnimation {
+                        visual = replacedVisual,
+                        startPosition = replacedStart,
+                        targetPosition = replacedVisual != null
+                            ? replacedVisual.transform.position
+                            : Vector3.zero
+                    }
+                };
+                StartCoroutine(AnimateCardMoves(moves));
                 break;
             }
         }
@@ -738,9 +983,7 @@ public class GameManager : MonoBehaviour
             cardIds[i] = zoneData.cardIds[i];
         }
         
-        foreach (int cardId in cardIds) {
-            MoveCard(cardId, CardZone.DISCARD);
-        }
+        MoveCardsWithAnimation(cardIds, CardZone.DISCARD);
     }
 
     private void BeginSequence(GameSequence sequence, float duration) {
@@ -774,23 +1017,11 @@ public class GameManager : MonoBehaviour
                         }
                         break;
                     case HandStartState.PLAYER_SELECTION_DONE:
-                        // TODO: Wait 2 seconds then flip the cards back over and move to enemy selection.
-                        state.handStart.waitUntil = Time.time + 2f;
                         state.handStart.state = HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION;
+                        StartCoroutine(PlaySelectionReveal());
                         break;
                     
                     case HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
-                        if (Time.time < state.handStart.waitUntil) break;
-                        
-                        for (int i = 0; i < state.handStart.playerSelectedCount; i++) {
-                            int cardId = state.handStart.playerSelectedCards[i];
-                            state.cards[cardId].facedown = true;
-                            state.cards[cardId].visualDirty = true;
-                        }
-                        state.game.state = GameState.PLAY;
-                        state.game.turnState = TurnStates.BEGIN;
-                        uiData.dirty = true;
-                        state.game.currentTurn = 1;
                         break;
                 }
                 break;
@@ -826,7 +1057,7 @@ public class GameManager : MonoBehaviour
                         break;
                     case TurnStates.DISCARD: {
                         int cardId = GetFirstCardInZone(CardZone.PLAYER_DRAW);
-                        MoveCard(cardId, CardZone.DISCARD);
+                        MoveCardsWithAnimation(new[] { cardId }, CardZone.DISCARD);
                         state.game.turnState = TurnStates.END;
                     }
                         break;
@@ -935,6 +1166,12 @@ public struct CardZoneData {
     public int[] cardIds;
     public int count;
     public bool dirty;
+}
+
+public struct CardMoveAnimation {
+    public AbstractCardVisual visual;
+    public Vector3 startPosition;
+    public Vector3 targetPosition;
 }
 
 [Serializable]
