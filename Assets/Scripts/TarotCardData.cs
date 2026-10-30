@@ -1,5 +1,3 @@
-using System;
-using UnityEngine;
 
 public enum TarotCardType {
     WheelOfFortune,

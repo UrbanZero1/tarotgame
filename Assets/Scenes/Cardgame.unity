@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e0db6b6d2fb4f1c8b13f47d6d6c9a81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StackCardLayout
-  cardOffset: {x: 0.001, y: 0, z: -0.01}
+  cardOffset: {x: 0.001, y: 0, z: 0.01}
 --- !u!1 &219278432
 GameObject:
   m_ObjectHideFlags: 0
@@ -253,7 +253,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9e0db6b6d2fb4f1c8b13f47d6d6c9a81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StackCardLayout
-  cardOffset: {x: 0, y: 0.01, z: 0}
+  cardOffset: {x: 0, y: 0, z: 0.01}
 --- !u!1 &253497084
 GameObject:
   m_ObjectHideFlags: 0

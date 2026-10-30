@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class StackCardLayout : CardLayout
 {
-    [SerializeField] private Vector3 cardOffset = new Vector3(0f, 0.01f, 0f);
+    [SerializeField] private Vector3 cardOffset = new Vector3(0f, 0f, 0.01f);
 
     public override void Layout(
         int[] cardIds,
@@ -17,7 +17,9 @@ public class StackCardLayout : CardLayout
                 continue;
 
             visual.transform.SetParent(anchor, false);
-            visual.transform.localPosition = cardOffset * i;
+            // Cards are stored oldest to newest. Keep the oldest card at the
+            // anchor and move each newer card farther in negative Z.
+            visual.transform.localPosition = -cardOffset * i;
             visual.transform.localRotation = Quaternion.identity;
             visual.transform.SetSiblingIndex(i);
             visual.gameObject.SetActive(true);

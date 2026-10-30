@@ -870,8 +870,8 @@ public class GameManager : MonoBehaviour
                         uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {state.game.handsRemaining}");
                         int playerPoints = CalculateZonePoints(CardZone.PLAYER);
                         string resultText = $"Hand Points: +{playerPoints}\n";
-                        uiData.UI.UpdateMiddleText(resultText);
                         SetAllCardsInZoneFaceDown(CardZone.PLAYER, false);
+                        uiData.UI.UpdateMiddleText(resultText);
                         break;
                     case TurnStates.END:
                         uiData.UI.DisableAllButtons();
@@ -927,6 +927,7 @@ public class GameManager : MonoBehaviour
                 AddCardToZone(replaceCardId, CardZone.DISCARD);       
                 state.cards[drawCardId].zone = CardZone.PLAYER;
                 state.cards[replaceCardId].zone = CardZone.DISCARD;
+                SetCardFaceDown(replaceCardId, false);
                 MarkZoneDirty(CardZone.PLAYER_DRAW);
                 MarkZoneDirty(CardZone.PLAYER);
                 MarkZoneDirty(CardZone.DISCARD);
@@ -1064,7 +1065,6 @@ public class GameManager : MonoBehaviour
                             }
                             else {
                                 if (state.game.handsRemaining > 0) {
-                                    SetAllCardsInZoneFaceDown(CardZone.PLAYER, true);
                                     DiscardAllCardsInZone(CardZone.PLAYER);
                                     DrawCards(CardZone.PLAYER, 5);
                                     state.game.state = GameState.START;
