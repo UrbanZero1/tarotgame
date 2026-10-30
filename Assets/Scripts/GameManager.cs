@@ -109,8 +109,8 @@ public class GameManager : MonoBehaviour
             (TarotCardType[])Enum.GetValues(typeof(TarotCardType));
         
         List<TarotCardType> remainingCards = new List<TarotCardType>(allTarotCardTypes);
-        
-        
+        remainingCards.Remove(TarotCardType.WheelOfFortune);
+
         CardData WheelOfFortune = new CardData {
             id = TAROT_CARD_OFFSET,
             kind = CardKind.Tarot,
@@ -124,7 +124,10 @@ public class GameManager : MonoBehaviour
         AddCardToZone(TAROT_CARD_OFFSET, CardZone.TAROT);
         
         for (int i = 1; i < STARTING_TAROT_CARDS; i++) {
-            int randomIndex = UnityEngine.Random.Range(0, remainingCards.Count);
+            // The Magician is guaranteed as the 2nd card while few tarot cards are implemented.
+            int randomIndex = i == 1
+                ? remainingCards.IndexOf(TarotCardType.TheMagician)
+                : UnityEngine.Random.Range(0, remainingCards.Count);
             TarotCardType selectedType = remainingCards[randomIndex];
             remainingCards.RemoveAt(randomIndex);
 
@@ -424,6 +427,18 @@ public class GameManager : MonoBehaviour
                 state.game.turnState = TurnStates.REPLACE;
                 uiData.dirty = true;
                 break;
+            case ButtonCommands.SUIT_HEARTS:
+                DeclareMagicianSuit(CardSuit.Hearts);
+                break;
+            case ButtonCommands.SUIT_DIAMONDS:
+                DeclareMagicianSuit(CardSuit.Diamonds);
+                break;
+            case ButtonCommands.SUIT_CLUBS:
+                DeclareMagicianSuit(CardSuit.Clubs);
+                break;
+            case ButtonCommands.SUIT_SPADES:
+                DeclareMagicianSuit(CardSuit.Spades);
+                break;
             case ButtonCommands.RESTART:
                 Restart();
                 break;
@@ -559,7 +574,7 @@ public class GameManager : MonoBehaviour
         List<CardMoveAnimation> moves = new List<CardMoveAnimation>();
 
         for (int i = 0; i < amount; i++){
-            int cardId = GetFirstCardInZone(CardZone.DECK);
+            int cardId = GetTopCardInZone(CardZone.DECK);
 
             if (cardId < 0) break;
 
@@ -610,6 +625,89 @@ public class GameManager : MonoBehaviour
         state.game.state = GameState.PLAY;
         state.game.turnState = TurnStates.BEGIN;
         uiData.dirty = true;
+    }
+
+    private void DeclareMagicianSuit(CardSuit suit) {
+        if (state.game.turnState != TurnStates.MAGICIAN_DECLARE) return;
+
+        state.game.turnState = TurnStates.TAROT_EFFECT;
+        uiData.UI.EnableSuitButtons(false);
+        StartCoroutine(PlayMagicianRoutine(suit));
+    }
+
+    private IEnumerator PlayWheelOfFortuneRoutine() {
+        cardAnimationInProgress = true;
+
+        // Show a new random number every frame for 2 seconds.
+        float endTime = Time.time + 2f;
+        while (Time.time < endTime) {
+            uiData.UI.UpdateMiddleText(UnityEngine.Random.Range(1, 14).ToString());
+            yield return null;
+        }
+
+        int chosen = UnityEngine.Random.Range(1, 14);
+        uiData.UI.UpdateMiddleText($"Wheel of Fortune: {chosen}");
+        TarotCardTypeExtensions.ApplyWheelOfFortuneValue(ref state, chosen);
+
+        CardZoneData hand = state.zones[(int)CardZone.PLAYER];
+        int[] handIds = new int[hand.count];
+        Array.Copy(hand.cardIds, handIds, hand.count);
+
+        // PlayFlipBatch clears cardAnimationInProgress when it finishes, so re-assert it.
+        yield return StartCoroutine(PlayFlipBatch(handIds, false));
+        cardAnimationInProgress = true;
+        yield return new WaitForSeconds(1f);
+        yield return StartCoroutine(PlayFlipBatch(handIds, true));
+
+        cardAnimationInProgress = false;
+        state.game.turnState = TurnStates.END;
+        uiData.dirty = true;
+    }
+
+    private IEnumerator PlayMagicianRoutine(CardSuit declared) {
+        cardAnimationInProgress = true;
+
+        int topId = GetTopCardInZone(CardZone.DECK);
+        if (topId < 0) {
+            uiData.UI.UpdateMiddleText("The deck is empty");
+            yield return new WaitForSeconds(1.5f);
+            cardAnimationInProgress = false;
+            state.game.turnState = TurnStates.END;
+            uiData.dirty = true;
+            yield break;
+        }
+
+        uiData.UI.UpdateMiddleText($"Declared {declared}");
+        yield return StartCoroutine(PlayFlipBatch(new[] { topId }, false));
+        cardAnimationInProgress = true;
+
+        CardData top = state.cards[topId];
+        bool match = top.suit == declared;
+        int delta = match ? top.value : -top.value;
+        state.game.currentPoints += delta;
+
+        uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
+        uiData.UI.UpdateMiddleText(
+            $"{GetRankLabel(top.value)} of {top.suit}: {(match ? "Match" : "No match")} ({(delta >= 0 ? "+" : "")}{delta})");
+        yield return new WaitForSeconds(1.5f);
+
+        // AnimateCardMoves sets cardAnimationInProgress synchronously and clears it when done.
+        MoveCardsWithAnimation(new[] { topId }, CardZone.DISCARD);
+        while (cardAnimationInProgress)
+            yield return null;
+
+        state.game.turnState = TurnStates.END;
+        uiData.dirty = true;
+    }
+
+    private static string GetRankLabel(int value) {
+        switch (value) {
+            case 1: return "Ace";
+            case 11: return "Jack";
+            case 12: return "Queen";
+            case 13: return "King";
+            default: return value.ToString();
+        }
     }
 
     private IEnumerator PlayFlipBatch(int[] cardIds, bool facedown) {
@@ -712,6 +810,18 @@ public class GameManager : MonoBehaviour
         }
 
         return zoneData.cardIds[0];
+    }
+
+    // StackCardLayout puts the last card in a zone visually on top, so draw from the end.
+    private int GetTopCardInZone(CardZone zone) {
+        CardZoneData zoneData = state.zones[(int)zone];
+
+        if (zoneData.count == 0) {
+            Debug.Log("No cards in zone " + zone + " to draw.");
+            return -1;
+        }
+
+        return zoneData.cardIds[zoneData.count - 1];
     }
 
     private void ShuffleZone(CardZone zone) {
@@ -849,6 +959,16 @@ public class GameManager : MonoBehaviour
                         uiData.UI.DisableAllButtons();
                         uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Select a Tarot card to play");
+                        break;
+                    case TurnStates.MAGICIAN_DECLARE:
+                        uiData.UI.DisableAllButtons();
+                        uiData.UI.EnableSuitButtons(true);
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateMiddleText("Declare a suit");
+                        break;
+                    case TurnStates.TAROT_EFFECT:
+                        // The running routine owns the middle text.
+                        uiData.UI.DisableAllButtons();
                         break;
                     case TurnStates.DRAW:
                         uiData.UI.DisableAllButtons();
@@ -1020,12 +1140,29 @@ public class GameManager : MonoBehaviour
                         if (state.game.cardsSelected.Count > 0) {
                             int cardId = state.game.cardsSelected[0];
                             if (IsTarotCardSelected(cardId)) {
-                                state.cards[cardId].tarotType.PlayCardEffect(ref state);
+                                TarotCardType tarotType = state.cards[cardId].tarotType;
                                 RemoveTarotCard(cardId);
                                 state.game.cardsSelected.Clear();
-                                state.game.turnState = TurnStates.END;
+                                switch (tarotType) {
+                                    case TarotCardType.WheelOfFortune:
+                                        state.game.turnState = TurnStates.TAROT_EFFECT;
+                                        StartCoroutine(PlayWheelOfFortuneRoutine());
+                                        break;
+                                    case TarotCardType.TheMagician:
+                                        state.game.turnState = TurnStates.MAGICIAN_DECLARE;
+                                        uiData.dirty = true;
+                                        break;
+                                    default:
+                                        tarotType.PlayCardEffect(ref state);
+                                        state.game.turnState = TurnStates.END;
+                                        break;
+                                }
                             }
                         }
+                        break;
+                    // Handled by the Wheel/Magician coroutines, which move on to END themselves.
+                    case TurnStates.TAROT_EFFECT:
+                    case TurnStates.MAGICIAN_DECLARE:
                         break;
                     case TurnStates.REPLACE:
                         if (state.game.cardsSelected.Count > 0) {
@@ -1122,7 +1259,9 @@ public enum TurnStates {
     DISCARD,
     END,
     CALCULATE_HAND,
-    PLAY_TAROT
+    PLAY_TAROT,
+    TAROT_EFFECT,
+    MAGICIAN_DECLARE
 }
 
 public struct CardData {

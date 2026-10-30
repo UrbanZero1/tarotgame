@@ -17,6 +17,11 @@ public class GameUI : MonoBehaviour {
     [SerializeField] private Button passButton;
     [SerializeField] private Button restartButton;
     [SerializeField] private Button exitButton;
+    [Header("Magician Suit Buttons")]
+    [SerializeField] private Button suitHeartsButton;
+    [SerializeField] private Button suitDiamondsButton;
+    [SerializeField] private Button suitClubsButton;
+    [SerializeField] private Button suitSpadesButton;
     [SerializeField] public TarotCardTooltip tooltip;
     
     public event System.Action<ButtonCommands> Clicked;
@@ -34,6 +39,28 @@ public class GameUI : MonoBehaviour {
         restartButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.RESTART));
         playTarotButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PLAY_TAROT));
         exitButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.EXIT));
+        AddSuitListener(suitHeartsButton, ButtonCommands.SUIT_HEARTS);
+        AddSuitListener(suitDiamondsButton, ButtonCommands.SUIT_DIAMONDS);
+        AddSuitListener(suitClubsButton, ButtonCommands.SUIT_CLUBS);
+        AddSuitListener(suitSpadesButton, ButtonCommands.SUIT_SPADES);
+        EnableSuitButtons(false);
+    }
+
+    private void AddSuitListener(Button button, ButtonCommands command) {
+        if (button == null) return;
+        button.onClick.AddListener(() => OnButtonClicked(command));
+    }
+
+    public void EnableSuitButtons(bool enable) {
+        SetButtonActive(suitHeartsButton, enable);
+        SetButtonActive(suitDiamondsButton, enable);
+        SetButtonActive(suitClubsButton, enable);
+        SetButtonActive(suitSpadesButton, enable);
+    }
+
+    private static void SetButtonActive(Button button, bool active) {
+        if (button != null)
+            button.gameObject.SetActive(active);
     }
 
     public void UpdateMiddleText(string text) {
@@ -92,8 +119,9 @@ public class GameUI : MonoBehaviour {
         passButton.gameObject.SetActive(false);
         restartButton.gameObject.SetActive(false);
         exitButton.gameObject.SetActive(false);
+        EnableSuitButtons(false);
     }
-    
+
     private void OnButtonClicked(ButtonCommands command) {
         Clicked?.Invoke(command);
         // Handle draw button click

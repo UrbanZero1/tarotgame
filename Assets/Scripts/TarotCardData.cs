@@ -122,21 +122,15 @@ public static class TarotCardTypeExtensions {
         }
     }
 
+    // Wheel of Fortune and The Magician are animated and driven by GameManager coroutines.
     public static void PlayCardEffect(this TarotCardType type, ref GameStateData data) {
-        switch (type) {
-            case TarotCardType.WheelOfFortune:
-                PlayWheelOfFortune(ref data);
-                break;
-        }
     }
 
-    private static void PlayWheelOfFortune(ref GameStateData data) {
-        int randomValue = UnityEngine.Random.Range(1, 14); // Random number between 1 and 13
-
+    public static void ApplyWheelOfFortuneValue(ref GameStateData data, int value) {
         CardZoneData handInfo = data.zones[(int)CardZone.PLAYER];
 
         for (int i = 0; i < handInfo.count; i++) {
-            data.cards[handInfo.cardIds[i]].value = randomValue;
+            data.cards[handInfo.cardIds[i]].value = value;
         }
     }
 }
