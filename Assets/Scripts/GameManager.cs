@@ -104,12 +104,15 @@ public class GameManager : MonoBehaviour
         started = true;
     }
 
+    // Tarot cards with a working effect, besides the Wheel of Fortune (always the first card).
+    // Starting cards 2 and 3 are picked from this list; add new cards here as they are built.
+    private static readonly TarotCardType[] ImplementedTarotCards = {
+        TarotCardType.TheMagician,
+        TarotCardType.TheHangedMan,
+    };
+
     private void CreateStartingTarotCards() {
-        TarotCardType[] allTarotCardTypes = 
-            (TarotCardType[])Enum.GetValues(typeof(TarotCardType));
-        
-        List<TarotCardType> remainingCards = new List<TarotCardType>(allTarotCardTypes);
-        remainingCards.Remove(TarotCardType.WheelOfFortune);
+        List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards);
 
         CardData WheelOfFortune = new CardData {
             id = TAROT_CARD_OFFSET,
@@ -124,10 +127,9 @@ public class GameManager : MonoBehaviour
         AddCardToZone(TAROT_CARD_OFFSET, CardZone.TAROT);
         
         for (int i = 1; i < STARTING_TAROT_CARDS; i++) {
-            // The Magician is guaranteed as the 2nd card while few tarot cards are implemented.
-            int randomIndex = i == 1
-                ? remainingCards.IndexOf(TarotCardType.TheMagician)
-                : UnityEngine.Random.Range(0, remainingCards.Count);
+            if (remainingCards.Count == 0) break;
+
+            int randomIndex = UnityEngine.Random.Range(0, remainingCards.Count);
             TarotCardType selectedType = remainingCards[randomIndex];
             remainingCards.RemoveAt(randomIndex);
 
@@ -258,23 +260,26 @@ public class GameManager : MonoBehaviour
         tooltipData.visible = true;
         tooltipData.position = eventData.position;
         tooltipData.hoveredCardId = visual.cardId;
+
+        uiData.UI.tooltip.Show(state.cards[visual.cardId].tarotType.GetDescription());
+        uiData.UI.tooltip.SetPosition(tooltipData.position);
     }
-    
+
     private void HideToolTip() {
         tooltipData.visible = false;
         tooltipData.hoveredCardId = INVALID_CARD_ID;
+        uiData.UI.tooltip.Hide();
     }
-    
+
+    // Called every frame so the tooltip follows the cursor while a tarot card is hovered.
     private void UpdateToolTip() {
-        if (!tooltipData.visible) {
-            uiData.UI.tooltip.Hide();
-            return;
-        }
+        if (!tooltipData.visible || tooltipData.hoveredCardId == INVALID_CARD_ID) return;
 
-        if (tooltipData.hoveredCardId == INVALID_CARD_ID) return;
+        UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
+        if (mouse != null)
+            tooltipData.position = mouse.position.ReadValue();
 
-        int cardId = tooltipData.hoveredCardId;
-        uiData.UI.tooltip.Show(state.cards[cardId].tarotType.GetDescription(), tooltipData.position);
+        uiData.UI.tooltip.SetPosition(tooltipData.position);
     }
 
     private void OnCardPointerExited(AbstractCardVisual visual, PointerEventData eventData) {
@@ -361,6 +366,7 @@ public class GameManager : MonoBehaviour
                         }
                         break;
                     case TurnStates.REPLACE:
+                    case TurnStates.HANGED_MAN_SELECT:
                         if (state.cards[cardId].zone == CardZone.PLAYER) {
                             if (state.game.cardsSelected.Count < 1) {
                                 state.game.cardsSelected.Add(cardId);
@@ -649,9 +655,7 @@ public class GameManager : MonoBehaviour
         uiData.UI.UpdateMiddleText($"Wheel of Fortune: {chosen}");
         TarotCardTypeExtensions.ApplyWheelOfFortuneValue(ref state, chosen);
 
-        CardZoneData hand = state.zones[(int)CardZone.PLAYER];
-        int[] handIds = new int[hand.count];
-        Array.Copy(hand.cardIds, handIds, hand.count);
+        int[] handIds = GetZoneCardIds(CardZone.PLAYER);
 
         // PlayFlipBatch clears cardAnimationInProgress when it finishes, so re-assert it.
         yield return StartCoroutine(PlayFlipBatch(handIds, false));
@@ -696,6 +700,62 @@ public class GameManager : MonoBehaviour
         while (cardAnimationInProgress)
             yield return null;
 
+        state.game.turnState = TurnStates.END;
+        uiData.dirty = true;
+    }
+
+    private int[] GetZoneCardIds(CardZone zone) {
+        CardZoneData zoneData = state.zones[(int)zone];
+        int[] cardIds = new int[zoneData.count];
+        Array.Copy(zoneData.cardIds, cardIds, zoneData.count);
+        return cardIds;
+    }
+
+    private IEnumerator PlayHangedManLookRoutine() {
+        cardAnimationInProgress = true;
+        uiData.UI.UpdateMiddleText("Look at your hand");
+
+        // PlayFlipBatch clears cardAnimationInProgress when it finishes, so clicks work afterwards.
+        yield return StartCoroutine(PlayFlipBatch(GetZoneCardIds(CardZone.PLAYER), false));
+
+        cardAnimationInProgress = false;
+        state.game.turnState = TurnStates.HANGED_MAN_SELECT;
+        uiData.dirty = true;
+    }
+
+    private IEnumerator PlayHangedManReplaceRoutine(int discardId) {
+        cardAnimationInProgress = true;
+
+        int drawId = GetTopCardInZone(CardZone.DECK);
+        if (drawId < 0) {
+            uiData.UI.UpdateMiddleText("The deck is empty");
+            yield return new WaitForSeconds(1f);
+            yield return StartCoroutine(PlayFlipBatch(GetZoneCardIds(CardZone.PLAYER), true));
+            cardAnimationInProgress = false;
+            state.game.turnState = TurnStates.END;
+            uiData.dirty = true;
+            yield break;
+        }
+
+        // Draw the new card face-up into the draw slot and let the player see it.
+        // AnimateCardMoves sets cardAnimationInProgress synchronously and clears it when done.
+        DrawCards(CardZone.PLAYER_DRAW, 1, false);
+        while (cardAnimationInProgress)
+            yield return null;
+        cardAnimationInProgress = true;
+
+        CardData drawn = state.cards[drawId];
+        uiData.UI.UpdateMiddleText($"Drew {GetRankLabel(drawn.value)} of {drawn.suit}");
+        yield return new WaitForSeconds(1f);
+
+        // Discard the chosen (already face-up) card; the new card takes its slot.
+        ReplaceCardFromDraw(drawId, discardId);
+        while (cardAnimationInProgress)
+            yield return null;
+
+        yield return StartCoroutine(PlayFlipBatch(GetZoneCardIds(CardZone.PLAYER), true));
+
+        cardAnimationInProgress = false;
         state.game.turnState = TurnStates.END;
         uiData.dirty = true;
     }
@@ -966,6 +1026,11 @@ public class GameManager : MonoBehaviour
                         uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Declare a suit");
                         break;
+                    case TurnStates.HANGED_MAN_SELECT:
+                        uiData.UI.DisableAllButtons();
+                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateMiddleText("Choose a card to discard");
+                        break;
                     case TurnStates.TAROT_EFFECT:
                         // The running routine owns the middle text.
                         uiData.UI.DisableAllButtons();
@@ -1047,7 +1112,8 @@ public class GameManager : MonoBehaviour
                 AddCardToZone(replaceCardId, CardZone.DISCARD);       
                 state.cards[drawCardId].zone = CardZone.PLAYER;
                 state.cards[replaceCardId].zone = CardZone.DISCARD;
-                SetCardFaceDown(replaceCardId, false);
+                if (state.cards[replaceCardId].facedown)
+                    SetCardFaceDown(replaceCardId, false);
                 MarkZoneDirty(CardZone.PLAYER_DRAW);
                 MarkZoneDirty(CardZone.PLAYER);
                 MarkZoneDirty(CardZone.DISCARD);
@@ -1152,6 +1218,10 @@ public class GameManager : MonoBehaviour
                                         state.game.turnState = TurnStates.MAGICIAN_DECLARE;
                                         uiData.dirty = true;
                                         break;
+                                    case TarotCardType.TheHangedMan:
+                                        state.game.turnState = TurnStates.TAROT_EFFECT;
+                                        StartCoroutine(PlayHangedManLookRoutine());
+                                        break;
                                     default:
                                         tarotType.PlayCardEffect(ref state);
                                         state.game.turnState = TurnStates.END;
@@ -1163,6 +1233,14 @@ public class GameManager : MonoBehaviour
                     // Handled by the Wheel/Magician coroutines, which move on to END themselves.
                     case TurnStates.TAROT_EFFECT:
                     case TurnStates.MAGICIAN_DECLARE:
+                        break;
+                    case TurnStates.HANGED_MAN_SELECT:
+                        if (state.game.cardsSelected.Count > 0) {
+                            int discardId = state.game.cardsSelected[0];
+                            state.game.cardsSelected.Clear();
+                            state.game.turnState = TurnStates.TAROT_EFFECT;
+                            StartCoroutine(PlayHangedManReplaceRoutine(discardId));
+                        }
                         break;
                     case TurnStates.REPLACE:
                         if (state.game.cardsSelected.Count > 0) {
@@ -1261,7 +1339,8 @@ public enum TurnStates {
     CALCULATE_HAND,
     PLAY_TAROT,
     TAROT_EFFECT,
-    MAGICIAN_DECLARE
+    MAGICIAN_DECLARE,
+    HANGED_MAN_SELECT
 }
 
 public struct CardData {
