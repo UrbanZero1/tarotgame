@@ -690,7 +690,7 @@ public class GameManager : MonoBehaviour
         int delta = match ? top.value : -top.value;
         state.game.currentPoints += delta;
 
-        uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
+        uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
         uiData.UI.UpdateMiddleText(
             $"{GetRankLabel(top.value)} of {top.suit}: {(match ? "Match" : "No match")} ({(delta >= 0 ? "+" : "")}{delta})");
         yield return new WaitForSeconds(1.5f);
@@ -994,10 +994,10 @@ public class GameManager : MonoBehaviour
                 switch (state.handStart.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {state.game.handsRemaining}");
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdatePointsGoalText($"Goal: {state.game.pointsGoal}");
-                        uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
+                        uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
                         uiData.UI.UpdateMiddleText("Select 2 cards to reveal");
                         break;
                     case HandStartState.PLAYER_SELECTION_DONE:
@@ -1009,7 +1009,7 @@ public class GameManager : MonoBehaviour
             case GameState.PLAY:
                 switch (state.game.turnState) {
                     case TurnStates.BEGIN:
-                        uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
+                        uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
                         uiData.UI.UpdateMiddleText("Select an action");
                         uiData.UI.EnableDrawButton(true);
                         uiData.UI.EnablePassButton(true);
@@ -1017,18 +1017,18 @@ public class GameManager : MonoBehaviour
                         break;
                     case TurnStates.PLAY_TAROT:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Select a Tarot card to play");
                         break;
                     case TurnStates.MAGICIAN_DECLARE:
                         uiData.UI.DisableAllButtons();
                         uiData.UI.EnableSuitButtons(true);
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Declare a suit");
                         break;
                     case TurnStates.HANGED_MAN_SELECT:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Choose a card to discard");
                         break;
                     case TurnStates.TAROT_EFFECT:
@@ -1037,14 +1037,14 @@ public class GameManager : MonoBehaviour
                         break;
                     case TurnStates.DRAW:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Discard or Replace");
                         uiData.UI.EnableDiscardButton(true);
                         uiData.UI.EnableReplaceButton(true);
                         break;
                     case TurnStates.REPLACE:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateActionsRemainingText($"Actions Remaining: {state.game.actionsRemaining}");
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Replace a card");
                         break;
                     case TurnStates.DISCARD:
@@ -1052,7 +1052,7 @@ public class GameManager : MonoBehaviour
                         break;
                     case TurnStates.CALCULATE_HAND:
                         uiData.UI.DisableAllButtons();
-                        uiData.UI.UpdateHandsRemainingText($"Hands Remaining: {state.game.handsRemaining}");
+                        uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
                         int playerPoints = CalculateZonePoints(CardZone.PLAYER);
                         string resultText = $"Hand Points: +{playerPoints}\n";
                         SetAllCardsInZoneFaceDown(CardZone.PLAYER, false);
@@ -1065,7 +1065,7 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case GameState.END:
-                    uiData.UI.UpdatePlayerPointsText($"Current Points: {state.game.currentPoints}");
+                    uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
                     uiData.UI.UpdateMiddleText(state.game.currentPoints >= pointsGoal
                         ? $"You Win! Final Score: {state.game.currentPoints}"
                         : $"Game Over! Final Score: {state.game.currentPoints}");
