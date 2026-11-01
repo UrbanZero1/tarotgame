@@ -18,7 +18,6 @@ public class GameManager : MonoBehaviour
     [SerializeField] private float holdDuration = 0.5f; // Duration in seconds to trigger a hold event
     [SerializeField] private int startingHands = 3;
     [SerializeField] private int startingActions = 3;
-    [SerializeField] private int pointsGoal = 100;
     [SerializeField] private float cardDrawAnimationDuration = 0.35f;
     [SerializeField] private float cardDrawAnimationStagger = 0.08f;
     [SerializeField] private float cardFlipAnimationDuration = 0.3f;
@@ -1068,7 +1067,7 @@ public class GameManager : MonoBehaviour
                 break;
             case GameState.END:
                     uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
-                    uiData.UI.UpdateMiddleText(state.game.currentPoints >= pointsGoal
+                    uiData.UI.UpdateMiddleText(state.game.currentPoints >= state.game.pointsGoal
                         ? $"You Win! Final Score: {state.game.currentPoints}"
                         : $"Game Over! Final Score: {state.game.currentPoints}");
                     uiData.UI.EnableMainMenuButton(true);
