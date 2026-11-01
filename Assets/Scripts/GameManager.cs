@@ -1066,6 +1066,7 @@ public class GameManager : MonoBehaviour
                 }
                 break;
             case GameState.END:
+                    uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
                     uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
                     uiData.UI.UpdateMiddleText(state.game.currentPoints >= state.game.pointsGoal
                         ? $"You Win! Final Score: {state.game.currentPoints}"
