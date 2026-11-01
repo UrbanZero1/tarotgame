@@ -21,7 +21,7 @@ public class CasinoManager : MonoBehaviour
 
     private string[] floorScenes =
     {
-        "Lobby",
+        "Menu",
         "Floor_1",
         "Floor_2",
         //"Floor_3"
@@ -74,7 +74,7 @@ public class CasinoManager : MonoBehaviour
 
     public void GoToLobby()
     {
-        SceneManager.LoadScene("Lobby");
+        SceneManager.LoadScene("Menu");
     }
 
     public void StartGame()
@@ -84,8 +84,9 @@ public class CasinoManager : MonoBehaviour
        
     }
 
-    public void EnterGame()
+    public void EnterGame(int goal)
     {
+        TransitionData.currentGoal = goal;
         SceneManager.LoadScene("Cardgame");
      
     }

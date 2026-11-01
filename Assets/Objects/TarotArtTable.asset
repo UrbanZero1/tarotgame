@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b8ee5265b3129440aef1fb4e4757018, type: 3}
+  m_Name: TarotArtTable
+  m_EditorClassIdentifier: Assembly-CSharp::CardArtTable
+  table:
+  - cardName: Wheel of Fortune
+    cardArt: {fileID: 21300000, guid: e6baf9aaa1e3b824382b911b86d3f31c, type: 3}
+  - cardName: The Magician
+    cardArt: {fileID: 21300000, guid: fe10ef093ad047b4f9138c5bedda6f17, type: 3}
+  - cardName: The Hanged Man
+    cardArt: {fileID: 21300000, guid: 9d4d1d95b343a3d45a3ccfacbb91ad3b, type: 3}

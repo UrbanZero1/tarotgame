@@ -15,7 +15,7 @@ public class CardVisual : AbstractCardVisual
     [SerializeField] private SpriteRenderer cardRenderer;
     [SerializeField] private CardArtTable cardArtTable;
     [SerializeField] private Vector2 cardRendererSize = Vector2.one;
-    [SerializeField] private Color selectedColor = new Color(1f, 0.85f, 0.35f);
+    [SerializeField] private Color selectedColor = new Color(.8f, 0.85f, 0.35f);
 
     private GameStateData state;
     private bool flipInProgress;

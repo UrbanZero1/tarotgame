@@ -3993,11 +3993,11 @@ MonoBehaviour:
       - m_Target: {fileID: 855773311}
         m_TargetAssemblyTypeName: CasinoManager, Assembly-CSharp
         m_MethodName: EnterGame
-        m_Mode: 1
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 130
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
@@ -4128,11 +4128,11 @@ MonoBehaviour:
       - m_Target: {fileID: 855773311}
         m_TargetAssemblyTypeName: CasinoManager, Assembly-CSharp
         m_MethodName: EnterGame
-        m_Mode: 1
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 100
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0
@@ -4925,11 +4925,11 @@ MonoBehaviour:
       - m_Target: {fileID: 855773311}
         m_TargetAssemblyTypeName: CasinoManager, Assembly-CSharp
         m_MethodName: EnterGame
-        m_Mode: 1
+        m_Mode: 3
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
+          m_IntArgument: 160
           m_FloatArgument: 0
           m_StringArgument: 
           m_BoolArgument: 0

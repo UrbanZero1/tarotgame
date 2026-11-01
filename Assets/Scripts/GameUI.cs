@@ -15,7 +15,7 @@ public class GameUI : MonoBehaviour {
     [SerializeField] private Button discardButton;
     [SerializeField] private Button replaceButton;
     [SerializeField] private Button passButton;
-    [SerializeField] private Button restartButton;
+    [FormerlySerializedAs("restartButton")] [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button exitButton;
     [Header("Magician Suit Buttons")]
     [SerializeField] private Button suitHeartsButton;
@@ -36,7 +36,7 @@ public class GameUI : MonoBehaviour {
         discardButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.DISCARD));
         replaceButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.REPLACE));
         passButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PASS));
-        restartButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.RESTART));
+        mainMenuButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.MAIN_MENU));
         playTarotButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.PLAY_TAROT));
         exitButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.EXIT));
         AddSuitListener(suitHeartsButton, ButtonCommands.SUIT_HEARTS);
@@ -99,8 +99,8 @@ public class GameUI : MonoBehaviour {
         replaceButton.gameObject.SetActive(enable);
     }
     
-    public void EnableRestartButton(bool enable) {
-        restartButton.gameObject.SetActive(enable);
+    public void EnableMainMenuButton(bool enable) {
+        mainMenuButton.gameObject.SetActive(enable);
     }
     
     public void EnableExitButton(bool enable) {
@@ -117,7 +117,7 @@ public class GameUI : MonoBehaviour {
         discardButton.gameObject.SetActive(false);
         replaceButton.gameObject.SetActive(false);
         passButton.gameObject.SetActive(false);
-        restartButton.gameObject.SetActive(false);
+        mainMenuButton.gameObject.SetActive(false);
         exitButton.gameObject.SetActive(false);
         EnableSuitButtons(false);
     }

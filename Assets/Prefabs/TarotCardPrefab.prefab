@@ -299,6 +299,9 @@ MonoBehaviour:
   nameText: {fileID: 2849271207576062453}
   frontFace: {fileID: 0}
   backFace: {fileID: 0}
+  cardRenderer: {fileID: 8461936332630854668}
+  cardArtTable: {fileID: 11400000, guid: 5d0b7c3e91a44f6a8c2e17b4f3a90d62, type: 2}
+  cardRendererSize: {x: 1, y: 1}
 --- !u!1 &8535634172442637878
 GameObject:
   m_ObjectHideFlags: 0

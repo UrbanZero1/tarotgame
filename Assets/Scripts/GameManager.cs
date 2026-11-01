@@ -3,9 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
+    private const string MENU_SCENE = "Menu";
     public const int REGULARCARDS = 52;
     public const int TAROT_CARD_OFFSET = REGULARCARDS;
     public const int MAX_TOTAL_CARDS = REGULARCARDS + STARTING_TAROT_CARDS;
@@ -92,7 +94,7 @@ public class GameManager : MonoBehaviour
         CreateStartingTarotCards();
         state.game.state = GameState.START;
         state.game.currentPoints = 0;
-        state.game.pointsGoal = pointsGoal;
+        state.game.pointsGoal = TransitionData.currentGoal;
         state.game.cardsSelected = new List<int>();
         state.game.actionsRemaining = startingActions;
         state.game.handsRemaining = startingHands;
@@ -405,7 +407,7 @@ public class GameManager : MonoBehaviour
     }
     
     private void OnButtonClicked(ButtonCommands command) {
-        if (cardAnimationInProgress && command != ButtonCommands.RESTART) return;
+        if (cardAnimationInProgress && command != ButtonCommands.MAIN_MENU) return;
 
         switch (command) {
             case ButtonCommands.DRAW:
@@ -445,8 +447,8 @@ public class GameManager : MonoBehaviour
             case ButtonCommands.SUIT_SPADES:
                 DeclareMagicianSuit(CardSuit.Spades);
                 break;
-            case ButtonCommands.RESTART:
-                Restart();
+            case ButtonCommands.MAIN_MENU:
+                SceneManager.LoadScene(MENU_SCENE);
                 break;
             case ButtonCommands.EXIT:
                 #if UNITY_EDITOR
@@ -1069,7 +1071,7 @@ public class GameManager : MonoBehaviour
                     uiData.UI.UpdateMiddleText(state.game.currentPoints >= pointsGoal
                         ? $"You Win! Final Score: {state.game.currentPoints}"
                         : $"Game Over! Final Score: {state.game.currentPoints}");
-                    uiData.UI.EnableRestartButton(true);
+                    uiData.UI.EnableMainMenuButton(true);
                     uiData.UI.EnableExitButton(true);
                     break;
         }

@@ -5,7 +5,7 @@ public enum ButtonCommands {
     REPLACE,
     DISCARD,
     PASS,
-    RESTART,
+    MAIN_MENU,
     EXIT,
     PLAY_TAROT,
     SUIT_HEARTS,
