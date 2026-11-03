@@ -1775,7 +1775,6 @@ MonoBehaviour:
   holdDuration: 0.5
   startingHands: 3
   startingActions: 3
-  pointsGoal: 100
   cardDrawAnimationDuration: 0.35
   cardDrawAnimationStagger: 0.08
   cardFlipAnimationDuration: 0.3
@@ -1814,6 +1813,95 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1724579359
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -3.62
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -10.44
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 2.09
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -4961275035715007626, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ed03ed21388d90f4ab72a7251a618ab5, type: 2}
+    - target: {fileID: 919132149155446097, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_Name
+      value: Card Table v4.0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8569979726467545556, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_CastShadows
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8569979726467545556, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_RayTracingMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8569979726467545556, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
+      propertyPath: m_LightProbeUsage
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: b189d2aaf1852e14fbad440b07cd061f, type: 3}
 --- !u!1 &1778370239
 GameObject:
   m_ObjectHideFlags: 0
@@ -2212,6 +2300,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Card Table 3.2
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d74d225bc1be6db48a8eb1a73d496522, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2237,3 +2329,4 @@ SceneRoots:
   - {fileID: 691174178}
   - {fileID: 1778370241}
   - {fileID: 1848758126}
+  - {fileID: 1724579359}
