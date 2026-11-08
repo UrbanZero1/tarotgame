@@ -8,6 +8,9 @@ using UnityEngine.SceneManagement;
 public class GameManager : MonoBehaviour
 {
     private const string MENU_SCENE = "Menu";
+    private const int HIGH_PRIESTESS_CARDS = 2;
+    private const int STAR_CARDS = 3;
+    private int handRevealCount; // How many hand cards the active High Priestess / Star reveals.
     public const int REGULARCARDS = 52;
     public const int TAROT_CARD_OFFSET = REGULARCARDS;
     public const int MAX_TOTAL_CARDS = REGULARCARDS + STARTING_TAROT_CARDS;
@@ -108,26 +111,17 @@ public class GameManager : MonoBehaviour
     // Tarot cards with a working effect, besides the Wheel of Fortune (always the first card).
     // Starting cards 2 and 3 are picked from this list; add new cards here as they are built.
     private static readonly TarotCardType[] ImplementedTarotCards = {
+        TarotCardType.WheelOfFortune,
         TarotCardType.TheMagician,
         TarotCardType.TheHangedMan,
+        TarotCardType.TheHighPriestess,
+        TarotCardType.TheStar,
     };
 
     private void CreateStartingTarotCards() {
         List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards);
-
-        CardData WheelOfFortune = new CardData {
-            id = TAROT_CARD_OFFSET,
-            kind = CardKind.Tarot,
-            tarotType = TarotCardType.WheelOfFortune,
-            zone = CardZone.TAROT,
-            visualDirty = true,
-        };
         
-        state.cards[TAROT_CARD_OFFSET] = WheelOfFortune;
-        SpawnTarotCard(WheelOfFortune);
-        AddCardToZone(TAROT_CARD_OFFSET, CardZone.TAROT);
-        
-        for (int i = 1; i < STARTING_TAROT_CARDS; i++) {
+        for (int i = 0; i < STARTING_TAROT_CARDS; i++) {
             if (remainingCards.Count == 0) break;
 
             int randomIndex = UnityEngine.Random.Range(0, remainingCards.Count);
@@ -364,6 +358,21 @@ public class GameManager : MonoBehaviour
                                 state.game.cardsSelected.Add(cardId);
                             }
                             state.game.cardsSelected[0] = cardId;
+                        }
+                        break;
+                    case TurnStates.HAND_REVEAL_SELECT:
+                        if (state.cards[cardId].zone != CardZone.PLAYER
+                            || !state.cards[cardId].facedown) {
+                            break;
+                        }
+
+                        // Click toggles a card; up to handRevealCount can be chosen.
+                        if (state.game.cardsSelected.Remove(cardId)) {
+                            cardVisuals[cardId]?.SetSelected(false);
+                        }
+                        else if (state.game.cardsSelected.Count < handRevealCount) {
+                            state.game.cardsSelected.Add(cardId);
+                            cardVisuals[cardId]?.SetSelected(true);
                         }
                         break;
                     case TurnStates.REPLACE:
@@ -761,6 +770,37 @@ public class GameManager : MonoBehaviour
         uiData.dirty = true;
     }
 
+    private int CountFaceDownCardsInZone(CardZone zone) {
+        CardZoneData zoneData = state.zones[(int)zone];
+        int count = 0;
+        for (int i = 0; i < zoneData.count; i++) {
+            if (state.cards[zoneData.cardIds[i]].facedown)
+                count++;
+        }
+
+        return count;
+    }
+
+    // Shared by The High Priestess and The Star: briefly reveal the chosen hand cards.
+    private IEnumerator PlayHandRevealRoutine(int[] cardIds) {
+        cardAnimationInProgress = true;
+
+        for (int i = 0; i < cardIds.Length; i++)
+            cardVisuals[cardIds[i]]?.SetSelected(false);
+
+        uiData.UI.UpdateMiddleText("Memorise these cards");
+
+        // PlayFlipBatch clears cardAnimationInProgress when it finishes, so re-assert it.
+        yield return StartCoroutine(PlayFlipBatch(cardIds, false));
+        cardAnimationInProgress = true;
+        yield return new WaitForSeconds(2f);
+        yield return StartCoroutine(PlayFlipBatch(cardIds, true));
+
+        cardAnimationInProgress = false;
+        state.game.turnState = TurnStates.END;
+        uiData.dirty = true;
+    }
+
     private static string GetRankLabel(int value) {
         switch (value) {
             case 1: return "Ace";
@@ -1032,6 +1072,11 @@ public class GameManager : MonoBehaviour
                         uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdateMiddleText("Choose a card to discard");
                         break;
+                    case TurnStates.HAND_REVEAL_SELECT:
+                        uiData.UI.DisableAllButtons();
+                        uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
+                        uiData.UI.UpdateMiddleText($"Choose {handRevealCount} cards to reveal");
+                        break;
                     case TurnStates.TAROT_EFFECT:
                         // The running routine owns the middle text.
                         uiData.UI.DisableAllButtons();
@@ -1224,6 +1269,16 @@ public class GameManager : MonoBehaviour
                                         state.game.turnState = TurnStates.TAROT_EFFECT;
                                         StartCoroutine(PlayHangedManLookRoutine());
                                         break;
+                                    case TarotCardType.TheHighPriestess:
+                                    case TarotCardType.TheStar:
+                                        handRevealCount = tarotType == TarotCardType.TheStar
+                                            ? STAR_CARDS
+                                            : HIGH_PRIESTESS_CARDS;
+                                        state.game.turnState = CountFaceDownCardsInZone(CardZone.PLAYER) > 0
+                                            ? TurnStates.HAND_REVEAL_SELECT
+                                            : TurnStates.END;
+                                        uiData.dirty = true;
+                                        break;
                                     default:
                                         tarotType.PlayCardEffect(ref state);
                                         state.game.turnState = TurnStates.END;
@@ -1235,6 +1290,18 @@ public class GameManager : MonoBehaviour
                     // Handled by the Wheel/Magician coroutines, which move on to END themselves.
                     case TurnStates.TAROT_EFFECT:
                     case TurnStates.MAGICIAN_DECLARE:
+                        break;
+                    case TurnStates.HAND_REVEAL_SELECT: {
+                        // Normally handRevealCount cards; fewer if the hand has fewer face-down cards.
+                        int needed = Mathf.Min(handRevealCount,
+                            CountFaceDownCardsInZone(CardZone.PLAYER));
+                        if (state.game.cardsSelected.Count >= needed) {
+                            int[] chosenIds = state.game.cardsSelected.ToArray();
+                            state.game.cardsSelected.Clear();
+                            state.game.turnState = TurnStates.TAROT_EFFECT;
+                            StartCoroutine(PlayHandRevealRoutine(chosenIds));
+                        }
+                    }
                         break;
                     case TurnStates.HANGED_MAN_SELECT:
                         if (state.game.cardsSelected.Count > 0) {
@@ -1342,7 +1409,8 @@ public enum TurnStates {
     PLAY_TAROT,
     TAROT_EFFECT,
     MAGICIAN_DECLARE,
-    HANGED_MAN_SELECT
+    HANGED_MAN_SELECT,
+    HAND_REVEAL_SELECT
 }
 
 public struct CardData {

@@ -97,7 +97,7 @@ public static class TarotCardTypeExtensions {
                 return "Discard 2 face-down cards. Then draw 2 new cards and put them in your hand without looking at them.";
 
             case TarotCardType.TheStar:
-                return "Look at the top 3 cards of the deck, then put them back in any order you choose.";
+                return "Reveal 3 cards in your hand.";
 
             case TarotCardType.TheFool:
                 return "Discard your entire 5-card lineup. Draw 5 brand-new cards and immediately reveal 2 to memorise. This restarts steps 1 and 2.";
@@ -122,7 +122,7 @@ public static class TarotCardTypeExtensions {
         }
     }
 
-    // Wheel of Fortune and The Magician are animated and driven by GameManager coroutines.
+    // Stub for unimplemented card effects.
     public static void PlayCardEffect(this TarotCardType type, ref GameStateData data) {
     }
 
