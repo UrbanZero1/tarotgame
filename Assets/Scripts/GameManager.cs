@@ -88,9 +88,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    /*
-     * RULES OF THE GAME
-     */
     private void GameStart() {
         CreateStartingTarotCards();
         state.game.state = GameState.START;
