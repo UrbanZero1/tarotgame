@@ -15,11 +15,9 @@ public class CardVisual : AbstractCardVisual
     [SerializeField] private SpriteRenderer cardRenderer;
     [SerializeField] private CardArtTable cardArtTable;
     [SerializeField] private Vector2 cardRendererSize = Vector2.one;
-    [SerializeField] private Color selectedColor = new Color(.8f, 0.85f, 0.35f);
 
     private GameStateData state;
     private bool flipInProgress;
-    private Color normalColor = Color.white;
 
     public void Initialize(GameStateData state, int cardId) {
         this.state = state;
@@ -27,9 +25,6 @@ public class CardVisual : AbstractCardVisual
         if (cardRenderer == null)
             cardRenderer = GetComponentInChildren<SpriteRenderer>();
 
-        if (cardRenderer != null)
-            normalColor = cardRenderer.color;
-        
         base.Initialize(cardId);
     }
 
@@ -56,20 +51,6 @@ public class CardVisual : AbstractCardVisual
             ApplyCardSprite(cardArtTable.GetCardArt(
                 $"{card.suit}_{GetRankName(card.value)}"));
         }
-
-        ApplySelectionColor();
-    }
-
-    public override void SetSelected(bool selected)
-    {
-        base.SetSelected(selected);
-        ApplySelectionColor();
-    }
-
-    private void ApplySelectionColor()
-    {
-        if (cardRenderer != null)
-            cardRenderer.color = IsSelected ? selectedColor : normalColor;
     }
 
     public override void PlayFlip(bool facedown, float duration, Action onComplete)
