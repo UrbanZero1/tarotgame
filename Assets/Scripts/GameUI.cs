@@ -22,7 +22,7 @@ public class GameUI : MonoBehaviour {
     [SerializeField] private Button suitDiamondsButton;
     [SerializeField] private Button suitClubsButton;
     [SerializeField] private Button suitSpadesButton;
-    [SerializeField] public TarotCardTooltip tooltip;
+    [SerializeField] public UITooltip tooltip;
     
     public event System.Action<ButtonCommands> Clicked;
     

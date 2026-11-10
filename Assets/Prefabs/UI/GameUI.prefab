@@ -257,7 +257,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: af36faa19b3ece9419dfff9361e9d4cb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TarotCardTooltip
+  m_EditorClassIdentifier: Assembly-CSharp::UITooltip
   tooltipRect: {fileID: 6220243907357465885}
   tooltipText: {fileID: 3587564649744485456}
   mouseOffset: {x: -130, y: 100}
@@ -1304,6 +1304,7 @@ GameObject:
   - component: {fileID: 7016684228791789349}
   - component: {fileID: 8870928282866461309}
   - component: {fileID: 797896991179729950}
+  - component: {fileID: 4350118264001000002}
   m_Layer: 5
   m_Name: HandsRemaining_BG
   m_TagString: Untagged
@@ -2925,6 +2926,7 @@ GameObject:
   - component: {fileID: 8754536929330110273}
   - component: {fileID: 705710142346063183}
   - component: {fileID: 2882055109065750259}
+  - component: {fileID: 4350118264001000001}
   m_Layer: 5
   m_Name: ActionsRemaining_BG
   m_TagString: Untagged
@@ -4299,3 +4301,31 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &4350118264001000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6246282994781745284}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4d1b7a05e2f4a38b96d0c71a8e35f12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipTrigger
+  tooltip: {fileID: 5690098272391194967}
+  text: 'Actions Remaining: drawing a card or playing a tarot card uses one action. The hand is scored when you run out of actions or pass.'
+--- !u!114 &4350118264001000002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2657737863061854976}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4d1b7a05e2f4a38b96d0c71a8e35f12, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TooltipTrigger
+  tooltip: {fileID: 5690098272391194967}
+  text: 'Hands Remaining: the number of hands you have left to reach the points goal.'

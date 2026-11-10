@@ -39,7 +39,6 @@ public class GameManager : MonoBehaviour
 
     private AbstractCardVisual[] cardVisuals = new AbstractCardVisual[MAX_TOTAL_CARDS];
     private GameStateData state;
-    private TooltipData tooltipData;
     public UIData uiData;
 
     private bool started = false;
@@ -240,7 +239,7 @@ public class GameManager : MonoBehaviour
         int cardId = visual.cardId;
         if (visual is TarotCardVisual) {
             Debug.Log("Hovered over Tarot card: " + state.cards[cardId].tarotType);
-            ShowToolTip(visual, eventData);
+            ShowToolTip(visual);
             return;
         }
         
@@ -251,30 +250,13 @@ public class GameManager : MonoBehaviour
         // TODO: Implement hover highlight
     }
 
-    private void ShowToolTip(AbstractCardVisual visual, PointerEventData eventData) {
-        tooltipData.visible = true;
-        tooltipData.position = eventData.position;
-        tooltipData.hoveredCardId = visual.cardId;
-
+    // The tooltip follows the cursor by itself; it only needs to be shown and hidden.
+    private void ShowToolTip(AbstractCardVisual visual) {
         uiData.UI.tooltip.Show(state.cards[visual.cardId].tarotType.GetDescription());
-        uiData.UI.tooltip.SetPosition(tooltipData.position);
     }
 
     private void HideToolTip() {
-        tooltipData.visible = false;
-        tooltipData.hoveredCardId = INVALID_CARD_ID;
         uiData.UI.tooltip.Hide();
-    }
-
-    // Called every frame so the tooltip follows the cursor while a tarot card is hovered.
-    private void UpdateToolTip() {
-        if (!tooltipData.visible || tooltipData.hoveredCardId == INVALID_CARD_ID) return;
-
-        UnityEngine.InputSystem.Mouse mouse = UnityEngine.InputSystem.Mouse.current;
-        if (mouse != null)
-            tooltipData.position = mouse.position.ReadValue();
-
-        uiData.UI.tooltip.SetPosition(tooltipData.position);
     }
 
     private void OnCardPointerExited(AbstractCardVisual visual, PointerEventData eventData) {
@@ -1371,7 +1353,6 @@ public class GameManager : MonoBehaviour
         UpdateDirtyZones();
         UpdateCardVisuals();
         UpdateUI();
-        UpdateToolTip();
         UpdateCardInteractions();
     }
 
@@ -1454,12 +1435,6 @@ public enum CardSuit {
     Diamonds,
     Clubs,
     Spades,
-}
-
-struct TooltipData {
-    public int hoveredCardId;
-    public bool visible;
-    public Vector2 position;
 }
 
 public enum CardZone {
