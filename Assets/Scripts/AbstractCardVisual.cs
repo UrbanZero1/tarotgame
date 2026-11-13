@@ -30,14 +30,31 @@ public abstract class AbstractCardVisual : MonoBehaviour,
     [Tooltip("The shadow is sized from this.")]
     [SerializeField] private Vector2 cardSize = new Vector2(1f, 1.4f);
 
+    [Header("Hover glow")]
+    [SerializeField] private Color glowColor = new Color(0.35f, 1f, 0.3f, 1f);
+    [SerializeField] private float glowMaxAlpha = 1f;
+    [SerializeField] private float glowFadeDuration = 0.12f;
+    [Tooltip("How much the glow dims at the bottom of its pulse (0 = no pulse).")]
+    [SerializeField] private float glowPulse = 0.15f;
+    [SerializeField] private float glowPulseSpeed = 3f;
+
     private Transform liftRoot;
     private Vector3 liftRestPosition;
     private SpriteRenderer shadow;
     private float lift;
     private Coroutine liftRoutine;
+    private SpriteRenderer glow;
+    private float glowAmount;
+    private bool glowTarget;
+    private Coroutine glowRoutine;
 
     private const float SHADOW_SHAPE_EXTENT = 0.75f;
+    private const float GLOW_MARGIN = 0.3f;
+    private const float GLOW_CORNER_RADIUS = 0.07f;
+    private const float GLOW_SIGMA = 0.09f;
+    private const float GLOW_PIXELS_PER_UNIT = 128f;
     private static Sprite shadowSprite;
+    private static Sprite glowSprite;
 
     protected virtual void Awake()
     {
@@ -53,10 +70,23 @@ public abstract class AbstractCardVisual : MonoBehaviour,
         shadow.sprite = GetShadowSprite();
         shadow.sharedMaterial = art.sharedMaterial; 
         shadow.sortingLayerID = art.sortingLayerID;
-        shadow.sortingOrder = art.sortingOrder - 1; 
+        shadow.sortingOrder = art.sortingOrder - 2;
         shadow.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         shadow.receiveShadows = false;
         ApplyLift();
+
+        GameObject glowObject = new GameObject("Glow");
+        glowObject.transform.SetParent(liftRoot, false);
+        Vector3 artScale = liftRoot.localScale;
+        glowObject.transform.localScale = new Vector3(1f / artScale.x, 1f / artScale.y, 1f / artScale.z);
+        glow = glowObject.AddComponent<SpriteRenderer>();
+        glow.sprite = GetGlowSprite(cardSize);
+        glow.sharedMaterial = art.sharedMaterial;
+        glow.sortingLayerID = art.sortingLayerID;
+        glow.sortingOrder = art.sortingOrder - 1;
+        glow.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        glow.receiveShadows = false;
+        ApplyGlow(1f);
     }
 
     private void OnDisable()
@@ -64,6 +94,11 @@ public abstract class AbstractCardVisual : MonoBehaviour,
         liftRoutine = null;
         lift = IsSelected ? 1f : 0f;
         ApplyLift();
+
+        glowRoutine = null;
+        glowTarget = false;
+        glowAmount = 0f;
+        ApplyGlow(1f);
     }
 
     public virtual void Initialize(int cardId)
@@ -135,6 +170,51 @@ public abstract class AbstractCardVisual : MonoBehaviour,
             1f);
     }
 
+    public void SetHovered(bool hovered)
+    {
+        if (glow == null || hovered == glowTarget) return;
+
+        glowTarget = hovered;
+
+        if (!isActiveAndEnabled)
+        {
+            glowAmount = hovered ? 1f : 0f;
+            ApplyGlow(1f);
+            return;
+        }
+
+        if (glowRoutine != null)
+            StopCoroutine(glowRoutine);
+        glowRoutine = StartCoroutine(GlowRoutine());
+    }
+
+    private IEnumerator GlowRoutine()
+    {
+        float speed = 1f / Mathf.Max(0.01f, glowFadeDuration);
+
+        while (glowTarget || glowAmount > 0f)
+        {
+            glowAmount = Mathf.MoveTowards(glowAmount, glowTarget ? 1f : 0f, speed * Time.deltaTime);
+            float pulse = glowTarget
+                ? 1f - glowPulse * 0.5f * (1f + Mathf.Sin(Time.time * glowPulseSpeed))
+                : 1f;
+            ApplyGlow(pulse);
+            yield return null;
+        }
+
+        glowRoutine = null;
+    }
+
+    private void ApplyGlow(float pulse)
+    {
+        if (glow == null) return;
+
+        glow.enabled = glowAmount > 0.001f;
+        Color color = glowColor;
+        color.a = glowColor.a * glowMaxAlpha * glowAmount * pulse;
+        glow.color = color;
+    }
+
     // A soft rounded rectangle, generated once so no art asset is needed.
     private static Sprite GetShadowSprite()
     {
@@ -177,6 +257,60 @@ public abstract class AbstractCardVisual : MonoBehaviour,
         // One pixel per 1/size unit, so the sprite is exactly 1 unit wide.
         shadowSprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), size);
         return shadowSprite;
+    }
+
+    private static Sprite GetGlowSprite(Vector2 size)
+    {
+        if (glowSprite != null) return glowSprite;
+
+        float totalWidth = size.x + 2f * GLOW_MARGIN;
+        float totalHeight = size.y + 2f * GLOW_MARGIN;
+        int width = Mathf.CeilToInt(totalWidth * GLOW_PIXELS_PER_UNIT);
+        int height = Mathf.CeilToInt(totalHeight * GLOW_PIXELS_PER_UNIT);
+
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
+        {
+            name = "CardGlow",
+            wrapMode = TextureWrapMode.Clamp,
+            filterMode = FilterMode.Bilinear
+        };
+
+        Vector2 halfSize = size * 0.5f;
+        Color32[] pixels = new Color32[width * height];
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float px = (x + 0.5f) / GLOW_PIXELS_PER_UNIT - totalWidth * 0.5f;
+                float py = (y + 0.5f) / GLOW_PIXELS_PER_UNIT - totalHeight * 0.5f;
+
+                float qx = Mathf.Abs(px) - (halfSize.x - GLOW_CORNER_RADIUS);
+                float qy = Mathf.Abs(py) - (halfSize.y - GLOW_CORNER_RADIUS);
+                float outside = new Vector2(Mathf.Max(qx, 0f), Mathf.Max(qy, 0f)).magnitude;
+                float inside = Mathf.Min(Mathf.Max(qx, qy), 0f);
+                float distance = outside + inside - GLOW_CORNER_RADIUS;
+
+                float alpha = 1f;
+                if (distance > 0f)
+                {
+                    float t = distance / GLOW_SIGMA;
+                    float fadeOut = 1f - Mathf.SmoothStep(GLOW_MARGIN * 0.6f, GLOW_MARGIN, distance);
+                    alpha = Mathf.Exp(-t * t) * fadeOut;
+                }
+
+                pixels[y * width + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply();
+
+        glowSprite = Sprite.Create(
+            texture,
+            new Rect(0, 0, width, height),
+            new Vector2(0.5f, 0.5f),
+            GLOW_PIXELS_PER_UNIT);
+        return glowSprite;
     }
 
     public virtual void PlayFlip(bool facedown, float duration, Action onComplete)

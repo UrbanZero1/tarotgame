@@ -11,5 +11,6 @@ public enum ButtonCommands {
     SUIT_HEARTS,
     SUIT_DIAMONDS,
     SUIT_CLUBS,
-    SUIT_SPADES
+    SUIT_SPADES,
+    CONFIRM
 }

@@ -86,7 +86,7 @@ SpriteRenderer:
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
-  m_DrawMode: 0
+  m_DrawMode: 1
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
@@ -296,6 +296,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f2ccc62c06472d4b93ef0a54d798e77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TarotCardVisual
+  liftHeight: 0.15
+  liftDuration: 0.12
+  shadowMaxAlpha: 0.5
+  shadowOffset: {x: 0.02, y: -0.05}
+  shadowSpread: 1.12
+  cardSize: {x: 1, y: 1.4}
+  glowColor: {r: 0.35, g: 1, b: 0.3, a: 1}
+  glowMaxAlpha: 1
+  glowFadeDuration: 0.12
+  glowPulse: 0.15
+  glowPulseSpeed: 3
   nameText: {fileID: 2849271207576062453}
   frontFace: {fileID: 0}
   backFace: {fileID: 0}

@@ -41,6 +41,8 @@ public class GameManager : MonoBehaviour
     private GameStateData state;
     public UIData uiData;
 
+    private int hoveredCardId = INVALID_CARD_ID;
+    private int glowCardId = INVALID_CARD_ID;
     private bool started = false;
     private bool cardAnimationInProgress;
 
@@ -70,6 +72,8 @@ public class GameManager : MonoBehaviour
     }
     
     void DestroyCards() {
+        hoveredCardId = INVALID_CARD_ID;
+        glowCardId = INVALID_CARD_ID;
         for (int i = 0; i < cardVisuals.Length; i++) {
             if (cardVisuals[i] != null) {
                 Destroy(cardVisuals[i].gameObject);
@@ -234,17 +238,16 @@ public class GameManager : MonoBehaviour
         //     Debug.LogError($"Unknown visual type: {visualType}");
         // }
         int cardId = visual.cardId;
+        hoveredCardId = cardId;
         if (visual is TarotCardVisual) {
             Debug.Log("Hovered over Tarot card: " + state.cards[cardId].tarotType);
             ShowToolTip(visual);
             return;
         }
-        
+
         CardInteractionData interaction = state.cardInteractions[cardId];
         interaction.hovered = true;
         state.cardInteractions[cardId] = interaction;
-        
-        // TODO: Implement hover highlight
     }
 
     // The tooltip follows the cursor by itself; it only needs to be shown and hidden.
@@ -258,6 +261,8 @@ public class GameManager : MonoBehaviour
 
     private void OnCardPointerExited(AbstractCardVisual visual, PointerEventData eventData) {
         int cardId = visual.cardId;
+        if (hoveredCardId == cardId)
+            hoveredCardId = INVALID_CARD_ID;
         if (visual is TarotCardVisual) {
             Debug.Log("Stopped hovering over Tarot card: " + state.cards[cardId].tarotType);
             HideToolTip();
@@ -325,6 +330,7 @@ public class GameManager : MonoBehaviour
                             state.handStart.playerSelectedCards[state.handStart.playerSelectedCount++] = cardId;
                             cardVisuals[cardId]?.SetSelected(true);
                         }
+                        uiData.dirty = true;
                         break;
                 }
 
@@ -345,14 +351,14 @@ public class GameManager : MonoBehaviour
                             break;
                         }
 
-                        // Click toggles a card; up to handRevealCount can be chosen.
                         if (state.game.cardsSelected.Remove(cardId)) {
                             cardVisuals[cardId]?.SetSelected(false);
                         }
-                        else if (state.game.cardsSelected.Count < handRevealCount) {
+                        else if (state.game.cardsSelected.Count < GetHandRevealTarget()) {
                             state.game.cardsSelected.Add(cardId);
                             cardVisuals[cardId]?.SetSelected(true);
                         }
+                        uiData.dirty = true;
                         break;
                     case TurnStates.REPLACE:
                     case TurnStates.HANGED_MAN_SELECT:
@@ -366,6 +372,84 @@ public class GameManager : MonoBehaviour
                 }
                 break;
         }
+    }
+
+    private int GetHandRevealTarget() {
+        return Mathf.Min(handRevealCount, CountFaceDownCardsInZone(CardZone.PLAYER));
+    }
+
+    private bool IsStartSelectionComplete() {
+        return state.handStart.playerSelectedCount >= state.handStart.playerSelectedCards.Length;
+    }
+
+    private bool IsHandRevealSelectionComplete() {
+        return state.game.cardsSelected.Count >= GetHandRevealTarget();
+    }
+
+    private void ConfirmSelection() {
+        if (state.game.state == GameState.START
+            && state.handStart.state == HandStartState.WAITING_FOR_PLAYER_SELECTION
+            && IsStartSelectionComplete()) {
+            state.handStart.state = HandStartState.PLAYER_SELECTION_DONE;
+            uiData.dirty = true;
+            return;
+        }
+
+        if (state.game.state == GameState.PLAY
+            && state.game.turnState == TurnStates.HAND_REVEAL_SELECT
+            && IsHandRevealSelectionComplete()) {
+            int[] chosenIds = state.game.cardsSelected.ToArray();
+            state.game.cardsSelected.Clear();
+            state.game.turnState = TurnStates.TAROT_EFFECT;
+            uiData.dirty = true;
+            StartCoroutine(PlayHandRevealRoutine(chosenIds));
+        }
+    }
+
+    private bool IsCardSelectable(int cardId) {
+        if (cardAnimationInProgress || cardId < 0 || cardId >= state.cards.Length) return false;
+
+        CardData card = state.cards[cardId];
+
+        switch (state.game.state) {
+            case GameState.START:
+                if (state.handStart.state != HandStartState.WAITING_FOR_PLAYER_SELECTION) return false;
+                return card.zone == CardZone.PLAYER
+                    && card.facedown
+                    && (FindSelectedCardIndex(cardId) >= 0
+                        || state.handStart.playerSelectedCount < state.handStart.playerSelectedCards.Length);
+            case GameState.PLAY:
+                switch (state.game.turnState) {
+                    case TurnStates.PLAY_TAROT:
+                        return card.kind == CardKind.Tarot;
+                    case TurnStates.REPLACE:
+                    case TurnStates.HANGED_MAN_SELECT:
+                        return card.zone == CardZone.PLAYER;
+                    case TurnStates.HAND_REVEAL_SELECT:
+                        return card.zone == CardZone.PLAYER
+                            && card.facedown
+                            && (state.game.cardsSelected.Contains(cardId)
+                                || state.game.cardsSelected.Count < GetHandRevealTarget());
+                }
+                return false;
+        }
+
+        return false;
+    }
+
+    private void UpdateHoverGlow() {
+        int desired = hoveredCardId != INVALID_CARD_ID && IsCardSelectable(hoveredCardId)
+            ? hoveredCardId
+            : INVALID_CARD_ID;
+        if (desired == glowCardId) return;
+
+        if (glowCardId != INVALID_CARD_ID)
+            cardVisuals[glowCardId]?.SetHovered(false);
+
+        glowCardId = desired;
+
+        if (glowCardId != INVALID_CARD_ID)
+            cardVisuals[glowCardId]?.SetHovered(true);
     }
 
     private int FindSelectedCardIndex(int cardId)
@@ -433,6 +517,9 @@ public class GameManager : MonoBehaviour
                 break;
             case ButtonCommands.SUIT_SPADES:
                 DeclareMagicianSuit(CardSuit.Spades);
+                break;
+            case ButtonCommands.CONFIRM:
+                ConfirmSelection();
                 break;
             case ButtonCommands.MAIN_MENU:
                 SceneManager.LoadScene(MENU_SCENE);
@@ -1018,11 +1105,14 @@ public class GameManager : MonoBehaviour
                         uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
                         uiData.UI.UpdatePointsGoalText($"Goal: {state.game.pointsGoal}");
                         uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
-                        uiData.UI.UpdateMiddleText("Select 2 cards to reveal");
+                        uiData.UI.UpdateMiddleText(IsStartSelectionComplete()
+                            ? "Confirm your selection"
+                            : "Select 2 cards to reveal");
+                        uiData.UI.EnableConfirmButton(IsStartSelectionComplete());
                         break;
                     case HandStartState.PLAYER_SELECTION_DONE:
-                        break;
                     case HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION:
+                        uiData.UI.DisableAllButtons();
                         break;
                 }
                 break;
@@ -1054,7 +1144,10 @@ public class GameManager : MonoBehaviour
                     case TurnStates.HAND_REVEAL_SELECT:
                         uiData.UI.DisableAllButtons();
                         uiData.UI.UpdateActionsRemainingText($"{state.game.actionsRemaining}");
-                        uiData.UI.UpdateMiddleText($"Choose {handRevealCount} cards to reveal");
+                        uiData.UI.UpdateMiddleText(IsHandRevealSelectionComplete()
+                            ? "Confirm your selection"
+                            : $"Choose {GetHandRevealTarget()} cards to reveal");
+                        uiData.UI.EnableConfirmButton(IsHandRevealSelectionComplete());
                         break;
                     case TurnStates.TAROT_EFFECT:
                         // The running routine owns the middle text.
@@ -1182,6 +1275,10 @@ public class GameManager : MonoBehaviour
         Destroy(cardVisuals[cardId].gameObject);
         cardVisuals[cardId] = null;
         ResetCardInteraction(cardId);
+        if (hoveredCardId == cardId)
+            hoveredCardId = INVALID_CARD_ID;
+        if (glowCardId == cardId)
+            glowCardId = INVALID_CARD_ID;
         HideToolTip();
     }
     
@@ -1207,9 +1304,6 @@ public class GameManager : MonoBehaviour
             case GameState.START:
                 switch (state.handStart.state) {
                     case HandStartState.WAITING_FOR_PLAYER_SELECTION:
-                        if (state.handStart.playerSelectedCount >= 2) {
-                            state.handStart.state = HandStartState.PLAYER_SELECTION_DONE;
-                        }
                         break;
                     case HandStartState.PLAYER_SELECTION_DONE:
                         state.handStart.state = HandStartState.WAITING_TO_HIDE_PLAYER_SELECTION;
@@ -1269,18 +1363,7 @@ public class GameManager : MonoBehaviour
                     // Handled by the Wheel/Magician coroutines, which move on to END themselves.
                     case TurnStates.TAROT_EFFECT:
                     case TurnStates.MAGICIAN_DECLARE:
-                        break;
-                    case TurnStates.HAND_REVEAL_SELECT: {
-                        // Normally handRevealCount cards; fewer if the hand has fewer face-down cards.
-                        int needed = Mathf.Min(handRevealCount,
-                            CountFaceDownCardsInZone(CardZone.PLAYER));
-                        if (state.game.cardsSelected.Count >= needed) {
-                            int[] chosenIds = state.game.cardsSelected.ToArray();
-                            state.game.cardsSelected.Clear();
-                            state.game.turnState = TurnStates.TAROT_EFFECT;
-                            StartCoroutine(PlayHandRevealRoutine(chosenIds));
-                        }
-                    }
+                    case TurnStates.HAND_REVEAL_SELECT:
                         break;
                     case TurnStates.HANGED_MAN_SELECT:
                         if (state.game.cardsSelected.Count > 0) {
@@ -1351,6 +1434,7 @@ public class GameManager : MonoBehaviour
         UpdateCardVisuals();
         UpdateUI();
         UpdateCardInteractions();
+        UpdateHoverGlow();
     }
 
 }
