@@ -119,8 +119,16 @@ public class GameManager : MonoBehaviour
     };
 
     private void CreateStartingTarotCards() {
-        List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards);
-        
+        //List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards);
+        List<TarotCardType> remainingCards = new List<TarotCardType>(ItemsManager.Instance.GetOwnedCards());
+
+
+        if (ItemsManager.Instance == null)
+        {
+            Debug.LogWarning("No ItemsManager found!");
+            return;
+        }
+
         for (int i = 0; i < STARTING_TAROT_CARDS; i++) {
             if (remainingCards.Count == 0) break;
 
