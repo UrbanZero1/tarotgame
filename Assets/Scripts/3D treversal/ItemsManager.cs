@@ -38,13 +38,13 @@ public class ItemsManager : MonoBehaviour
     // ============================
     // INVENTORY SYSTEM METHODS 
     // ============================
+
     private void Awake()
     {
-        // Ensure that the ItemsManager persists across scenes
-        DontDestroyOnLoad(gameObject);
-       if (Instance == null)
+        if (Instance == null)
         {
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -56,21 +56,17 @@ public class ItemsManager : MonoBehaviour
     {
         Debug.Log("ItemsManager started");
 
+        // Temporary test: player owns 2 Wheel of Fortune cards
         AddCard(TarotCardType.WheelOfFortune);
         AddCard(TarotCardType.WheelOfFortune);
 
-
-        Debug.Log(ownedCards.Count);
+        Debug.Log("Cards owned: " + ownedCards.Count);
     }
 
     public bool AddCard(TarotCardType cardType)
     {
-        if (!ownedCards.Contains(cardType))
-        {
-            ownedCards.Add(cardType);
-            return true;
-        }
-        return false;
+        ownedCards.Add(cardType);
+        return true;
     }
 
     public bool HasCard(TarotCardType cardType)
@@ -78,14 +74,29 @@ public class ItemsManager : MonoBehaviour
         return ownedCards.Contains(cardType);
     }
 
+    public bool RemoveCard(TarotCardType cardType)
+    {
+        if (!ownedCards.Contains(cardType))
+        {
+            Debug.LogWarning($"Player does not own {cardType}");
+            return false;
+        }
+
+        ownedCards.Remove(cardType);
+        Debug.Log($"Removed {cardType}. Cards remaining: {ownedCards.Count}");
+        return true;
+    }
+
     public List<TarotCardType> GetOwnedCards()
     {
         return new List<TarotCardType>(ownedCards);
     }
 
+
     // ============================
-    // INVENTORY SYSTEM METHODS 
+    // SHOP SYSTEM METHODS 
     // ============================
+
     public int GetCardPrice(TarotCardType cardType)
     {
         if (cardPrices.TryGetValue(cardType, out int price))
@@ -95,19 +106,41 @@ public class ItemsManager : MonoBehaviour
         else
         {
             Debug.LogWarning($"Price for card type {cardType} not found.");
-            return -1; // Return -1 or some default value if the card type is not found
+            return -1;
         }
     }
 
     public bool BuyCard(TarotCardType cardType)
     {
         int price = GetCardPrice(cardType);
-        if (price == -1)
+
+        // Check if the card has a valid price
+        if (price <= 0)
         {
-            Debug.LogWarning($"Cannot buy card type {cardType} because its price is not defined.");
+            Debug.LogWarning($"Invalid price for {cardType}");
             return false;
         }
 
-        return false;
+        // Check if the currency manager exists
+        if (ChipManager.Instance == null)
+        {
+            Debug.LogWarning("ChipManager not found!");
+            return false;
+        }
+
+        // Try to deduct the required chips
+        if (!ChipManager.Instance.SpendChips(price))
+        {
+            Debug.LogWarning("Not enough chips to buy " + cardType);
+            return false;
+        }
+
+        // Add the purchased card to the inventory
+        AddCard(cardType);
+
+        Debug.Log($"Purchased {cardType} for {price} chips!");
+
+        return true;
     }
+
 }

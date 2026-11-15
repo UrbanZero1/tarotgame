@@ -1280,6 +1280,12 @@ public class GameManager : MonoBehaviour
         if (!IsValidCardId(cardId)) return;
         if (state.cards[cardId].kind != CardKind.Tarot) return;
 
+        TarotCardType cardType = state.cards[cardId].tarotType;
+
+        if (ItemsManager.Instance != null)
+        {
+            ItemsManager.Instance.RemoveCard(cardType);
+        }
         RemoveCardFromZone(cardId, CardZone.TAROT);
         state.cards[cardId] = default;
         Destroy(cardVisuals[cardId].gameObject);
