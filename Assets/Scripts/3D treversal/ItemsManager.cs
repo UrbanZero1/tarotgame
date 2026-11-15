@@ -63,12 +63,14 @@ public class ItemsManager : MonoBehaviour
         Debug.Log(ownedCards.Count);
     }
 
-    public void AddCard(TarotCardType cardType)
+    public bool AddCard(TarotCardType cardType)
     {
         if (!ownedCards.Contains(cardType))
         {
             ownedCards.Add(cardType);
+            return true;
         }
+        return false;
     }
 
     public bool HasCard(TarotCardType cardType)
@@ -95,5 +97,17 @@ public class ItemsManager : MonoBehaviour
             Debug.LogWarning($"Price for card type {cardType} not found.");
             return -1; // Return -1 or some default value if the card type is not found
         }
+    }
+
+    public bool BuyCard(TarotCardType cardType)
+    {
+        int price = GetCardPrice(cardType);
+        if (price == -1)
+        {
+            Debug.LogWarning($"Cannot buy card type {cardType} because its price is not defined.");
+            return false;
+        }
+
+        return false;
     }
 }
