@@ -119,7 +119,9 @@ public class GameManager : MonoBehaviour
     };
 
     private void CreateStartingTarotCards() {
-        //List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards);
+        //Old method to generate starting tarot cards from the ImplementedTarotCards array, now replaced with ItemsManager to get owned cards.
+        //List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards); 
+
         List<TarotCardType> remainingCards = new List<TarotCardType>(ItemsManager.Instance.GetOwnedCards());
 
 
