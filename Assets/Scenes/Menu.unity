@@ -1779,7 +1779,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &532964344
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2695,7 +2695,7 @@ MonoBehaviour:
   elevatorMenu: {fileID: 1915040584}
   floorButtonPrefab: {fileID: 7739782073903936801, guid: 863ecdf609bf2e54da96b03edc30e04e, type: 3}
   StartMenu: {fileID: 0}
-  LevelMenu: {fileID: 0}
+  LevelMenu: {fileID: 330336659}
   How_To_Play: {fileID: 0}
 --- !u!4 &855773312
 Transform:
@@ -4443,7 +4443,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1666294426
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6323,6 +6323,10 @@ PrefabInstance:
     - target: {fileID: 5127862380849640625, guid: 9bc401dfe141a154991ba3ad782c517e, type: 3}
       propertyPath: m_Name
       value: ShopCard UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 5127862380849640625, guid: 9bc401dfe141a154991ba3ad782c517e, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
