@@ -1,21 +1,26 @@
+
+using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ItemsManager : MonoBehaviour
 {
-    // ============================
-    // INVENTORY SYSTEM VARIABLES 
-    // ============================
-    private List <TarotCardType> ownedCards = new List <TarotCardType>();
-
-    public static ItemsManager Instance;
+    public static ItemsManager Instance { get; private set; }
 
     // ============================
-    // SHOP SYSTEM VARIABLES 
+    // INVENTORY VARIABLES
     // ============================
 
-    private Dictionary<TarotCardType, int> cardPrices = new Dictionary<TarotCardType, int>()
+    private List<TarotCardType> ownedCards = new List<TarotCardType>();
+
+    // ============================
+    // SHOP VARIABLES
+    // ============================
+
+    private Dictionary<TarotCardType, int> cardPrices =
+        new Dictionary<TarotCardType, int>()
     {
         { TarotCardType.WheelOfFortune, 100 },
         { TarotCardType.TheMagician, 150 },
@@ -34,34 +39,62 @@ public class ItemsManager : MonoBehaviour
         { TarotCardType.TheSun, 800 }
     };
 
+    private GameObject shopCardPrefab;
+    private Transform cardContainer;
+
+    private RectTransform shopPanel;
+    private RectTransform fortuneTeller;
+    private Button fortuneTellerButton;
+    private CanvasGroup shopCanvasGroup;
+    private GameObject clickBlocker;
+
+    private Vector2 shopOpenPosition;
+    private Vector2 shopClosedPosition;
+    private Vector2 tellerClosedPosition;
+    private Vector2 tellerOpenPosition;
+
+    private bool shopInitialized = false;
+    private bool isShopOpen = false;
+    private bool isAnimating = false;
+
+    private const float SLIDE_DURATION = 0.5f;
+    private const float TELLER_EXTRA_HEIGHT = -50f;
 
     // ============================
-    // INVENTORY SYSTEM METHODS 
+    // UNITY METHODS
     // ============================
 
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            Instance = null;
         }
     }
 
-    private void Start()
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        Debug.Log("ItemsManager started");
-
-        // Temporary test: player owns 2 Wheel of Fortune cards
-        AddCard(TarotCardType.WheelOfFortune);
-        AddCard(TarotCardType.WheelOfFortune);
-
-        Debug.Log("Cards owned: " + ownedCards.Count);
+        SetupShopScene();
     }
+
+    // ============================
+    // INVENTORY METHODS
+    // ============================
 
     public bool AddCard(TarotCardType cardType)
     {
@@ -76,14 +109,13 @@ public class ItemsManager : MonoBehaviour
 
     public bool RemoveCard(TarotCardType cardType)
     {
-        if (!ownedCards.Contains(cardType))
+        if (!ownedCards.Remove(cardType))
         {
-            Debug.LogWarning($"Player does not own {cardType}");
+            Debug.LogWarning("Player does not own " + cardType);
             return false;
         }
 
-        ownedCards.Remove(cardType);
-        Debug.Log($"Removed {cardType}. Cards remaining: {ownedCards.Count}");
+        Debug.Log("Removed one " + cardType);
         return true;
     }
 
@@ -92,9 +124,8 @@ public class ItemsManager : MonoBehaviour
         return new List<TarotCardType>(ownedCards);
     }
 
-
     // ============================
-    // SHOP SYSTEM METHODS 
+    // SHOP PURCHASE METHODS
     // ============================
 
     public int GetCardPrice(TarotCardType cardType)
@@ -103,44 +134,347 @@ public class ItemsManager : MonoBehaviour
         {
             return price;
         }
-        else
-        {
-            Debug.LogWarning($"Price for card type {cardType} not found.");
-            return -1;
-        }
+
+        Debug.LogWarning("Price not found for " + cardType);
+        return -1;
     }
 
     public bool BuyCard(TarotCardType cardType)
     {
         int price = GetCardPrice(cardType);
 
-        // Check if the card has a valid price
         if (price <= 0)
         {
-            Debug.LogWarning($"Invalid price for {cardType}");
+            Debug.LogWarning("Invalid card price.");
             return false;
         }
 
-        // Check if the currency manager exists
         if (ChipManager.Instance == null)
         {
             Debug.LogWarning("ChipManager not found!");
             return false;
         }
 
-        // Try to deduct the required chips
         if (!ChipManager.Instance.SpendChips(price))
         {
-            Debug.LogWarning("Not enough chips to buy " + cardType);
+            Debug.LogWarning("Not enough chips!");
             return false;
         }
 
-        // Add the purchased card to the inventory
         AddCard(cardType);
 
-        Debug.Log($"Purchased {cardType} for {price} chips!");
+        Debug.Log(
+            "Purchased " + cardType.GetName()
+            + " for " + price + " chips."
+        );
 
         return true;
     }
 
+    // ============================
+    // AUTOMATIC UI LOOKUP
+    // ============================
+
+    private Transform FindSceneObject(string objectName)
+    {
+        Scene scene = SceneManager.GetActiveScene();
+
+        foreach (GameObject root in scene.GetRootGameObjects())
+        {
+            Transform[] children =
+                root.GetComponentsInChildren<Transform>(true);
+
+            foreach (Transform child in children)
+            {
+                if (child.name == objectName)
+                {
+                    return child;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private void LoadCardsPrefab()
+    {
+        if (shopCardPrefab == null)
+        {
+            shopCardPrefab =
+                Resources.Load<GameObject>("ShopCardUI");
+        }
+
+        if (shopCardPrefab == null)
+        {
+            Debug.LogError(
+                "ShopCardUI prefab missing from Resources!"
+            );
+        }
+    }
+
+    // ============================
+    // SHOP SCENE SETUP
+    // ============================
+
+    private void SetupShopScene()
+    {
+        Transform root = FindSceneObject("ShopRoot");
+        Transform panel = FindSceneObject("ShopPanel");
+        Transform teller = FindSceneObject("FortuneTeller");
+        Transform container = FindSceneObject("CardContainer");
+
+        if (root == null || panel == null || teller == null)
+        {
+            return;
+        }
+
+        shopPanel = panel.GetComponent<RectTransform>();
+        fortuneTeller = teller.GetComponent<RectTransform>();
+        fortuneTellerButton = teller.GetComponent<Button>();
+        cardContainer = container;
+
+        if (shopPanel == null ||
+            fortuneTeller == null ||
+            fortuneTellerButton == null)
+        {
+            Debug.LogError("Shop UI components are missing!");
+            return;
+        }
+
+        shopInitialized = false;
+        isShopOpen = false;
+        isAnimating = false;
+
+        // Record positions from the editor BEFORE moving anything.
+        shopOpenPosition = shopPanel.anchoredPosition;
+        tellerClosedPosition = fortuneTeller.anchoredPosition;
+
+        float slideDistance = shopPanel.rect.height + 30f;
+
+        shopClosedPosition =
+            shopOpenPosition + Vector2.down * slideDistance;
+
+        tellerOpenPosition =
+            tellerClosedPosition +
+            Vector2.up * (slideDistance + TELLER_EXTRA_HEIGHT);
+
+        shopCanvasGroup =
+            shopPanel.GetComponent<CanvasGroup>();
+
+        if (shopCanvasGroup == null)
+        {
+            shopCanvasGroup =
+                shopPanel.gameObject.AddComponent<CanvasGroup>();
+        }
+
+        // Keep ShopPanel active so its children can be generated.
+        shopPanel.gameObject.SetActive(true);
+
+        // Start closed.
+        shopPanel.anchoredPosition = shopClosedPosition;
+        fortuneTeller.anchoredPosition = tellerClosedPosition;
+
+        shopCanvasGroup.alpha = 0f;
+        shopCanvasGroup.interactable = false;
+        shopCanvasGroup.blocksRaycasts = false;
+
+        // Render shop above level-selection UI.
+        root.SetAsLastSibling();
+
+        CreateClickBlocker(root);
+
+        // Fortune Teller stays visible and clickable.
+        fortuneTeller.SetAsLastSibling();
+
+        fortuneTellerButton.onClick.RemoveListener(ToggleShop);
+        fortuneTellerButton.onClick.AddListener(ToggleShop);
+
+        Debug.Log(
+            $"Shop setup complete. Open Y: {shopOpenPosition.y}, " +
+            $"Closed Y: {shopClosedPosition.y}"
+        );
+    }
+
+    private void CreateClickBlocker(Transform shopRoot)
+    {
+        Transform existing = shopRoot.Find("ShopClickBlocker");
+
+        if (existing != null)
+        {
+            clickBlocker = existing.gameObject;
+        }
+        else
+        {
+            clickBlocker = new GameObject(
+                "ShopClickBlocker",
+                typeof(RectTransform),
+                typeof(Image)
+            );
+
+            clickBlocker.transform.SetParent(shopRoot, false);
+
+            RectTransform rect =
+                clickBlocker.GetComponent<RectTransform>();
+
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+
+            Image image = clickBlocker.GetComponent<Image>();
+            image.color = new Color(0, 0, 0, 0);
+            image.raycastTarget = true;
+        }
+
+        clickBlocker.transform.SetAsFirstSibling();
+        clickBlocker.SetActive(false);
+    }
+
+    // ============================
+    // GENERATE SHOP CARDS
+    // ============================
+
+    private void SetupShop()
+    {
+        if (shopInitialized)
+        {
+            return;
+        }
+
+        LoadCardsPrefab();
+
+        if (shopCardPrefab == null || cardContainer == null)
+        {
+            Debug.LogWarning("Shop setup failed!");
+            return;
+        }
+
+        foreach (TarotCardType cardType in cardPrices.Keys)
+        {
+            if (!IsCardAvailable(cardType))
+            {
+                continue;
+            }
+
+            GameObject cardUI =
+                Instantiate(shopCardPrefab, cardContainer);
+
+            ShopCardUI cardComponent =
+                cardUI.GetComponent<ShopCardUI>();
+
+            if (cardComponent != null)
+            {
+                cardComponent.Setup(
+                    cardType,
+                    GetCardPrice(cardType)
+                );
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "ShopCardUI script missing from prefab!"
+                );
+
+                Destroy(cardUI);
+            }
+        }
+
+        shopInitialized = true;
+    }
+
+    private bool IsCardAvailable(TarotCardType cardType)
+    {
+        switch (cardType)
+        {
+            case TarotCardType.WheelOfFortune:
+            case TarotCardType.TheMagician:
+            case TarotCardType.TheHangedMan:
+            case TarotCardType.TheHighPriestess:
+            case TarotCardType.TheStar:
+                return true;
+
+            default:
+                return false;
+        }
+    }
+
+    // ============================
+    // SHOP TOGGLE + ANIMATION
+    // ============================
+
+    public void ToggleShop()
+    {
+        if (isAnimating || shopPanel == null)
+        {
+            return;
+        }
+
+        if (!isShopOpen)
+        {
+            SetupShop();
+
+            if (!shopInitialized)
+            {
+                return;
+            }
+        }
+
+        StartCoroutine(AnimateShop(!isShopOpen));
+    }
+
+    private IEnumerator AnimateShop(bool opening)
+    {
+        isAnimating = true;
+        fortuneTellerButton.interactable = false;
+
+        if (opening)
+        {
+            clickBlocker.SetActive(true);
+            shopCanvasGroup.alpha = 1f;
+        }
+
+        shopCanvasGroup.interactable = false;
+        shopCanvasGroup.blocksRaycasts = false;
+
+        Vector2 panelStart = shopPanel.anchoredPosition;
+        Vector2 tellerStart = fortuneTeller.anchoredPosition;
+
+        Vector2 panelTarget =
+            opening ? shopOpenPosition : shopClosedPosition;
+
+        Vector2 tellerTarget =
+            opening ? tellerOpenPosition : tellerClosedPosition;
+
+        float elapsed = 0f;
+
+        while (elapsed < SLIDE_DURATION)
+        {
+            elapsed += Time.deltaTime;
+
+            float t = Mathf.Clamp01(elapsed / SLIDE_DURATION);
+            t = Mathf.SmoothStep(0f, 1f, t);
+
+            shopPanel.anchoredPosition =
+                Vector2.Lerp(panelStart, panelTarget, t);
+
+            fortuneTeller.anchoredPosition =
+                Vector2.Lerp(tellerStart, tellerTarget, t);
+
+            yield return null;
+        }
+
+        shopPanel.anchoredPosition = panelTarget;
+        fortuneTeller.anchoredPosition = tellerTarget;
+
+        isShopOpen = opening;
+
+        shopCanvasGroup.alpha = opening ? 1f : 0f;
+        shopCanvasGroup.interactable = opening;
+        shopCanvasGroup.blocksRaycasts = opening;
+
+        clickBlocker.SetActive(opening);
+
+        fortuneTellerButton.interactable = true;
+        isAnimating = false;
+    }
 }

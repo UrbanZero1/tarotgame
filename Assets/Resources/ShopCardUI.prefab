@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1671585977478483112}
   - component: {fileID: 1884481288186783123}
   m_Layer: 5
-  m_Name: Image
+  m_Name: CardImage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -223,8 +223,9 @@ GameObject:
   - component: {fileID: 1448307484335223863}
   - component: {fileID: 4677579975737490084}
   - component: {fileID: 2434688346523414180}
+  - component: {fileID: 2615616030254129355}
   m_Layer: 5
-  m_Name: ShopCard UI
+  m_Name: ShopCardUI
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -290,6 +291,18 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &2615616030254129355
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5127862380849640625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 858b48cb18d4ce745ae27b3cc3f5741b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShopCardUI
 --- !u!1 &6431873223239710806
 GameObject:
   m_ObjectHideFlags: 0
@@ -303,7 +316,7 @@ GameObject:
   - component: {fileID: 7967920369207274573}
   - component: {fileID: 8988727372780026005}
   m_Layer: 5
-  m_Name: Button
+  m_Name: BuyButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -423,7 +436,7 @@ GameObject:
   - component: {fileID: 5052453113386393807}
   - component: {fileID: 5341573204226959812}
   m_Layer: 5
-  m_Name: Price
+  m_Name: PriceText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
