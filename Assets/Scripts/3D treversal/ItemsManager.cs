@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
 
 public class ItemsManager : MonoBehaviour
 {
@@ -78,6 +79,13 @@ public class ItemsManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void Start()
+    {
+        AddCard(TarotCardType.WheelOfFortune);
+        AddCard(TarotCardType.TheMagician);
+        AddCard(TarotCardType.TheHangedMan);
     }
 
     private void OnDestroy()
