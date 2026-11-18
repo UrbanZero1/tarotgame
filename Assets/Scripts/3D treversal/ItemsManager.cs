@@ -246,6 +246,8 @@ public class ItemsManager : MonoBehaviour
         }
     }
 
+
+
     private void SetupShelfCards()
     {
         if (shelfCardContainer == null)
@@ -256,13 +258,21 @@ public class ItemsManager : MonoBehaviour
         if (shopCardPrefab == null)
             return;
 
-        int index = 0;
-        const float spacing = 270f;
+        List<TarotCardType> availableCards = new List<TarotCardType>();
 
         foreach (TarotCardType cardType in cardPrices.Keys)
         {
-            if (!IsCardAvailable(cardType))
-                continue;
+            if (IsCardAvailable(cardType))
+                availableCards.Add(cardType);
+        }
+
+        float spacingX = 110f;
+        float spacingY = 160f;
+        float offsetY = 100f; 
+
+        for (int index = 0; index < availableCards.Count; index++)
+        {
+            TarotCardType cardType = availableCards[index];
 
             GameObject card = Instantiate(
                 shopCardPrefab,
@@ -270,38 +280,41 @@ public class ItemsManager : MonoBehaviour
                 false
             );
 
-            ShopCardUI cardUI =
-                card.GetComponent<ShopCardUI>();
-
-            RectTransform rect =
-                card.GetComponent<RectTransform>();
+            ShopCardUI cardUI = card.GetComponent<ShopCardUI>();
+            RectTransform rect = card.GetComponent<RectTransform>();
 
             if (cardUI == null || rect == null)
             {
-                Debug.LogWarning(
-                    "ShopCardUI prefab needs ShopCardUI " +
-                    "and RectTransform components."
-                );
-
+                Debug.LogWarning("ShopCardUI components missing!");
                 Destroy(card);
                 continue;
             }
 
             cardUI.Setup(cardType, GetCardPrice(cardType));
 
+            // Top row: 2 cards
+            // Bottom row: 3 cards
+            int row = index < 2 ? 0 : 1;
+            int column = row == 0 ? index : index - 2;
+            int cardsInRow = row == 0 ? 2 : 3;
+
+            float startX = -(cardsInRow - 1) * spacingX / 2f;
+
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
 
-            rect.anchoredPosition =
-                new Vector2(index * spacing, 0f);
+            rect.anchoredPosition = new Vector2(
+                startX + column * spacingX,
+                offsetY - row * spacingY
+            );
 
-            rect.localScale = Vector3.one;
-
-            index++;
+            rect.localScale = Vector3.one*0.2f;
         }
 
-        Debug.Log("Generated " + index + " shelf cards.");
+        Debug.Log("Generated " + availableCards.Count + " shelf cards.");
     }
+
+
 
     // ============================
     // AVAILABLE TEST CARDS
