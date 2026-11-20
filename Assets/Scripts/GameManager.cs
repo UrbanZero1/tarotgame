@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
+using UnityEngine.Rendering.Universal;
 
 public class GameManager : MonoBehaviour
 {
@@ -17,6 +18,8 @@ public class GameManager : MonoBehaviour
     private const int MAX_CARDS_PER_ZONE = REGULARCARDS;
     public const int INVALID_CARD_ID = -1;
     public const int STARTING_TAROT_CARDS = 3;
+    
+   
     
     [SerializeField] private float holdDuration = 0.5f; // Duration in seconds to trigger a hold event
     [SerializeField] private int startingHands = 3;
@@ -45,6 +48,9 @@ public class GameManager : MonoBehaviour
     private int glowCardId = INVALID_CARD_ID;
     private bool started = false;
     private bool cardAnimationInProgress;
+    // adding chip rewards prerequisites
+    private bool chipsRewarded = false;
+    private int chipsEarned = 0;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -93,6 +99,10 @@ public class GameManager : MonoBehaviour
     }
 
     private void GameStart() {
+        //chip reward stuff
+
+        chipsRewarded = false;
+        chipsEarned = 0;
         CreateStartingTarotCards();
         state.game.state = GameState.START;
         state.game.currentPoints = 0;
@@ -118,6 +128,32 @@ public class GameManager : MonoBehaviour
         TarotCardType.TheStar,
     };
 
+    // Reward chips method here is the function that works together with ChipManager and
+    // CasinoManager scripsts
+    private void ChipAward()
+    {
+        // to prevent duplication
+        if (chipsRewarded)
+            return;
+
+        if (ChipManager.Instance == null)
+        {
+            Debug.LogError("Chip manager is missing, you cant get Chips Michael Effed up");
+            return;
+        }
+        int reward = TransitionData.GetChipReward();
+
+        ChipManager.Instance.RewardChips(reward);
+
+
+
+        chipsEarned = reward;
+        chipsRewarded = true;
+
+        Debug.Log(
+            $"I won {TransitionData.currentDifficulty}" + $"Earned {chipsEarned} Chips" +
+            $"Total chip bank: {ChipManager.Instance.CurrentChips}");
+    }
     private void CreateStartingTarotCards() {
         //Old method to generate starting tarot cards from the ImplementedTarotCards array, now replaced with ItemsManager to get owned cards.
         //List<TarotCardType> remainingCards = new List<TarotCardType>(ImplementedTarotCards); 
@@ -1192,15 +1228,41 @@ public class GameManager : MonoBehaviour
                         
                 }
                 break;
+            //Resturcture for rewards
             case GameState.END:
-                    uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
-                    uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
-                    uiData.UI.UpdateMiddleText(state.game.currentPoints >= state.game.pointsGoal
-                        ? $"You Win! Final Score: {state.game.currentPoints}"
-                        : $"Game Over! Final Score: {state.game.currentPoints}");
-                    uiData.UI.EnableMainMenuButton(true);
-                    uiData.UI.EnableExitButton(true);
-                    break;
+                 uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
+                 uiData.UI.UpdatePlayerPointsText($"{state.game.currentPoints}");
+                //    uiData.UI.UpdateMiddleText(state.game.currentPoints >= state.game.pointsGoal
+                //       ? $"You Win! Final Score: {state.game.currentPoints}"
+                //      : $"Game Over! Final Score: {state.game.currentPoints}");
+                //  uiData.UI.EnableMainMenuButton(true);
+                // uiData.UI.EnableExitButton(true);
+                //    break;
+        
+                bool playerWon = state.game.currentPoints >= state.game.pointsGoal;
+
+                if (playerWon)
+                {
+                    uiData.UI.UpdateMiddleText(
+                        $"YOU WIN!\n" +
+                        $"Final Score: {state.game.currentPoints}\n" +
+                        $"Difficulty: {TransitionData.currentDifficulty}\n" +
+                        $"+{chipsEarned} Chips Earned!"
+                    );
+                }
+                else
+                {
+                    uiData.UI.UpdateMiddleText(
+                        $"GAME OVER!\n" +
+                        $"Final Score: {state.game.currentPoints}\n" +
+                        $"Chips Earned: 0"
+                    );
+                }
+
+                uiData.UI.EnableMainMenuButton(true);
+                uiData.UI.EnableExitButton(true);
+
+                break;
         }
     }
     
@@ -1423,6 +1485,9 @@ public class GameManager : MonoBehaviour
                             state.game.currentPoints += CalculateZonePoints(CardZone.PLAYER);
                             uiData.dirty = true;
                             if (state.game.currentPoints >= state.game.pointsGoal) {
+                                // calls the chip reward function
+                                ChipAward();
+
                                 state.game.state = GameState.END;
                             }
                             else {

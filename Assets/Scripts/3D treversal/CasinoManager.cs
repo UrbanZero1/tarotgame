@@ -83,13 +83,41 @@ public class CasinoManager : MonoBehaviour
         LevelMenu.SetActive(true);
        
     }
+    
+   // public void EnterGame(int goal)
+    //{
+    //    TransitionData.currentGoal = goal;
+    //    SceneManager.LoadScene("Cardgame");
+     
+   // }
+    // restructring the Enter Game method for rewards 
 
     public void EnterGame(int goal)
     {
         TransitionData.currentGoal = goal;
+
+        switch(goal)
+        {
+            case 100:
+                TransitionData.currentDifficulty = GameDifficulty.Easy;
+                break;
+
+            case 130:
+                TransitionData.currentDifficulty = GameDifficulty.Hard;
+                break;
+
+            case 160:
+                TransitionData.currentDifficulty = GameDifficulty.Impossible;
+                break;
+
+            default:
+                Debug.LogError($"Uknown Difficulty goal: {goal}");
+                return;
+
+        }
         SceneManager.LoadScene("Cardgame");
-     
     }
+
 
     public void GoToFloor(int floor)
     {
