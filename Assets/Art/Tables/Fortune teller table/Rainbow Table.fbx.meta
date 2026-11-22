@@ -3,7 +3,12 @@ guid: 17f47a2239e3e614682d31ddf2802972
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Texturelabs_Paper_275M
+    second: {fileID: 2800000, guid: 1eb9320529f596c43b3b9d18f6b9b53b, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
