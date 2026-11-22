@@ -138,6 +138,7 @@ public class CasinoManager : MonoBehaviour
         Cursor.visible = false;
     }
 
+    //Buttons section
 
     public void A2Start()
     {
@@ -148,6 +149,11 @@ public class CasinoManager : MonoBehaviour
     {
         
         How_To_Play.SetActive(true);
+    }
+
+    public void openShop()
+    {
+        SceneManager.LoadScene("Shop");
     }
 
 }

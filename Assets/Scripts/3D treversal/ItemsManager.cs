@@ -16,6 +16,20 @@ public class ItemsManager : MonoBehaviour
 
     private List<TarotCardType> ownedCards = new List<TarotCardType>();
 
+    // Inventory UI references (separate from the 3D shop).
+    private RectTransform inventoryPanel;
+    private RectTransform inventoryButton;
+    private Button inventoryButtonComponent;
+    private CanvasGroup inventoryCanvasGroup;
+    private Vector2 inventoryOpenPosition;
+    private Vector2 inventoryClosedPosition;
+    private Vector2 inventoryButtonClosedPosition;
+    private Vector2 inventoryButtonOpenPosition;
+    private bool isInventoryOpen = false;
+    private bool isInventoryAnimating = false;
+
+    private Transform inventoryCardContainer;
+
     // ============================
     // SHOP VARIABLES
     // ============================
@@ -101,6 +115,9 @@ public class ItemsManager : MonoBehaviour
     {
         shelfCardContainer = null;
 
+        // Restore the inventory in any scene containing inventoryRoot.
+        SetupInventory();
+
         if (scene.name != "Shop")
             return;
 
@@ -118,6 +135,169 @@ public class ItemsManager : MonoBehaviour
     // ============================
     // INVENTORY METHODS
     // ============================
+
+    public void SetupInventory()
+    {
+        // The inventory does not exist in every scene.
+        Transform root = FindSceneObject("inventoryRoot");
+        if (root == null)
+        {
+            inventoryPanel = null;
+            inventoryButton = null;
+            inventoryButtonComponent = null;
+            inventoryCanvasGroup = null;
+            return;
+        }
+
+        Transform panel = root.Find("InventoryPanel");
+        Transform button = root.Find("inventoryBtn");
+        Transform container = panel != null ? panel.Find("CardContainer") : null;
+
+        if (panel == null || button == null || container == null)
+        {
+            Debug.LogWarning("Inventory UI objects not found!");
+            return;
+        }
+
+        inventoryCardContainer = container;
+        inventoryPanel = panel.GetComponent<RectTransform>();
+        inventoryButton = button.GetComponent<RectTransform>();
+        inventoryButtonComponent = button.GetComponent<Button>();
+        inventoryCanvasGroup = panel.GetComponent<CanvasGroup>();
+
+        if (inventoryPanel == null || inventoryButton == null ||
+            inventoryButtonComponent == null || inventoryCanvasGroup == null)
+        {
+            Debug.LogWarning(
+                "Missing components: " +
+                "Panel RectTransform = " + (inventoryPanel != null) +
+                ", Button RectTransform = " + (inventoryButton != null) +
+                ", Button = " + (inventoryButtonComponent != null) +
+                ", CanvasGroup = " + (inventoryCanvasGroup != null)
+);
+            return;
+        }
+
+        // The editor positions are the intended OPEN panel and CLOSED button positions.
+        inventoryOpenPosition = inventoryPanel.anchoredPosition;
+        inventoryButtonClosedPosition = inventoryButton.anchoredPosition;
+
+        float slideDistance = inventoryPanel.rect.height + 30f;
+
+        inventoryClosedPosition =
+            inventoryOpenPosition + Vector2.down * slideDistance;
+
+        inventoryButtonOpenPosition =
+            inventoryButtonClosedPosition +
+            Vector2.up * (slideDistance + TELLER_EXTRA_HEIGHT);
+
+        inventoryPanel.anchoredPosition = inventoryClosedPosition;
+        inventoryButton.anchoredPosition = inventoryButtonClosedPosition;
+
+        inventoryCanvasGroup.alpha = 0f;
+        inventoryCanvasGroup.interactable = false;
+        inventoryCanvasGroup.blocksRaycasts = false;
+
+        isInventoryOpen = false;
+        isInventoryAnimating = false;
+
+        root.SetAsLastSibling();
+        button.SetAsLastSibling();
+
+        inventoryButtonComponent.onClick.RemoveListener(ToggleInventory);
+        inventoryButtonComponent.onClick.AddListener(ToggleInventory);
+
+        Debug.Log("Inventory UI found successfully!");
+    }
+
+    public void GenerateInventoryCards()
+    {
+        LoadCardsPrefab();
+
+        foreach (TarotCardType cardType in ownedCards)
+        {
+            GameObject card = Instantiate(
+                shopCardPrefab,
+                inventoryCardContainer,
+                false
+            );
+            ShopCardUI cardUI = card.GetComponent<ShopCardUI>();
+            RectTransform rect = card.GetComponent<RectTransform>();
+            if (cardUI == null || rect == null)
+            {
+                Destroy(card);
+                continue;
+            }
+            cardUI.Setup(cardType, GetCardPrice(cardType));
+            rect.localScale = Vector3.one * 0.4f;
+        }
+
+        Debug.Log("Generated " + ownedCards.Count + " inventory cards.");
+    }
+
+    public void ToggleInventory()
+    {
+        if (isInventoryAnimating || inventoryPanel == null ||
+            inventoryButton == null || inventoryButtonComponent == null ||
+            inventoryCanvasGroup == null)
+            return;
+
+        StartCoroutine(AnimateInventory(!isInventoryOpen));
+        GenerateInventoryCards();
+    }
+
+    private IEnumerator AnimateInventory(bool opening)
+    {
+        isInventoryAnimating = true;
+        inventoryButtonComponent.interactable = false;
+
+        if (opening)
+            inventoryCanvasGroup.alpha = 1f;
+
+        inventoryCanvasGroup.interactable = false;
+        inventoryCanvasGroup.blocksRaycasts = false;
+
+        Vector2 panelStart = inventoryPanel.anchoredPosition;
+        Vector2 buttonStart = inventoryButton.anchoredPosition;
+
+        Vector2 panelTarget =
+            opening ? inventoryOpenPosition : inventoryClosedPosition;
+
+        Vector2 buttonTarget =
+            opening ? inventoryButtonOpenPosition : inventoryButtonClosedPosition;
+
+        float elapsed = 0f;
+
+        while (elapsed < SLIDE_DURATION)
+        {
+            elapsed += Time.deltaTime;
+
+            float t = Mathf.SmoothStep(
+                0f, 1f,
+                Mathf.Clamp01(elapsed / SLIDE_DURATION)
+            );
+
+            inventoryPanel.anchoredPosition =
+                Vector2.Lerp(panelStart, panelTarget, t);
+
+            inventoryButton.anchoredPosition =
+                Vector2.Lerp(buttonStart, buttonTarget, t);
+
+            yield return null;
+        }
+
+        inventoryPanel.anchoredPosition = panelTarget;
+        inventoryButton.anchoredPosition = buttonTarget;
+
+        isInventoryOpen = opening;
+
+        inventoryCanvasGroup.alpha = opening ? 1f : 0f;
+        inventoryCanvasGroup.interactable = opening;
+        inventoryCanvasGroup.blocksRaycasts = opening;
+
+        inventoryButtonComponent.interactable = true;
+        isInventoryAnimating = false;
+    }
 
     public bool AddCard(TarotCardType cardType)
     {
@@ -254,8 +434,6 @@ public class ItemsManager : MonoBehaviour
         }
     }
 
-
-
     private void SetupShelfCards()
     {
         if (shelfCardContainer == null)
@@ -266,21 +444,19 @@ public class ItemsManager : MonoBehaviour
         if (shopCardPrefab == null)
             return;
 
-        List<TarotCardType> availableCards = new List<TarotCardType>();
+        int maxCards = 3;
+        int index = 0;
+
+        float spacingX = 110f;
+        float offsetY = 50f;
 
         foreach (TarotCardType cardType in cardPrices.Keys)
         {
-            if (IsCardAvailable(cardType))
-                availableCards.Add(cardType);
-        }
+            if (!IsCardAvailable(cardType))
+                continue;
 
-        float spacingX = 110f;
-        float spacingY = 160f;
-        float offsetY = 100f; 
-
-        for (int index = 0; index < availableCards.Count; index++)
-        {
-            TarotCardType cardType = availableCards[index];
+            if (index >= maxCards)
+                break;
 
             GameObject card = Instantiate(
                 shopCardPrefab,
@@ -293,36 +469,26 @@ public class ItemsManager : MonoBehaviour
 
             if (cardUI == null || rect == null)
             {
-                Debug.LogWarning("ShopCardUI components missing!");
                 Destroy(card);
                 continue;
             }
 
             cardUI.Setup(cardType, GetCardPrice(cardType));
 
-            // Top row: 2 cards
-            // Bottom row: 3 cards
-            int row = index < 2 ? 0 : 1;
-            int column = row == 0 ? index : index - 2;
-            int cardsInRow = row == 0 ? 2 : 3;
-
-            float startX = -(cardsInRow - 1) * spacingX / 2f;
-
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
 
-            rect.anchoredPosition = new Vector2(
-                startX + column * spacingX,
-                offsetY - row * spacingY
-            );
+            // Centre three cards horizontally
+            float x = (index - 1) * spacingX;
 
-            rect.localScale = Vector3.one*0.2f;
+            rect.anchoredPosition = new Vector2(x, offsetY);
+            rect.localScale = Vector3.one * 0.4f;
+
+            index++;
         }
 
-        Debug.Log("Generated " + availableCards.Count + " shelf cards.");
+        Debug.Log("Generated " + index + " shelf cards.");
     }
-
-
 
     // ============================
     // AVAILABLE TEST CARDS

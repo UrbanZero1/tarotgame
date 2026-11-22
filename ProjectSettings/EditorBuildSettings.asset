@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/Cardgame.unity
     guid: cb5c25bc951ad3b4a852d02a7cd757ea
+  - enabled: 1
+    path: Assets/Scenes/Shop.unity
+    guid: 219795d143d82e8418a8cea83ed88b16
   - enabled: 0
     path: Assets/Scenes/Floor_1.unity
     guid: 4b513ae84a88fae4586278b86749646a
