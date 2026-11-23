@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using Unity.VisualScripting;
+using TMPro;
 
 public class ItemsManager : MonoBehaviour
 {
@@ -16,19 +17,26 @@ public class ItemsManager : MonoBehaviour
 
     private List<TarotCardType> ownedCards = new List<TarotCardType>();
 
-    // Inventory UI references (separate from the 3D shop).
+    [Header("Card Artwork")]
+    [SerializeField] private CardArtTable cardArtTable;
+
+    [Header("Inventory UI")]
+    [SerializeField] private GameObject inventoryCardPrefab;
+
+    private Transform inventoryCardContainer;
+
     private RectTransform inventoryPanel;
     private RectTransform inventoryButton;
     private Button inventoryButtonComponent;
     private CanvasGroup inventoryCanvasGroup;
+
     private Vector2 inventoryOpenPosition;
     private Vector2 inventoryClosedPosition;
     private Vector2 inventoryButtonClosedPosition;
     private Vector2 inventoryButtonOpenPosition;
+
     private bool isInventoryOpen = false;
     private bool isInventoryAnimating = false;
-
-    private Transform inventoryCardContainer;
 
     // ============================
     // SHOP VARIABLES
@@ -100,6 +108,10 @@ public class ItemsManager : MonoBehaviour
         AddCard(TarotCardType.WheelOfFortune);
         AddCard(TarotCardType.TheMagician);
         AddCard(TarotCardType.TheHangedMan);
+        AddCard(TarotCardType.WheelOfFortune);
+
+        // Also support starting directly in the inventory scene.
+        SetupInventory();
     }
 
     private void OnDestroy()
@@ -115,7 +127,6 @@ public class ItemsManager : MonoBehaviour
     {
         shelfCardContainer = null;
 
-        // Restore the inventory in any scene containing inventoryRoot.
         SetupInventory();
 
         if (scene.name != "Shop")
@@ -126,7 +137,7 @@ public class ItemsManager : MonoBehaviour
 
     private IEnumerator InitializeShelf()
     {
-        yield return null; // Wait one frame
+        yield return null;
 
         FindShelfContainer(SceneManager.GetActiveScene());
         SetupShelfCards();
@@ -138,20 +149,23 @@ public class ItemsManager : MonoBehaviour
 
     public void SetupInventory()
     {
-        // The inventory does not exist in every scene.
         Transform root = FindSceneObject("inventoryRoot");
+
         if (root == null)
         {
             inventoryPanel = null;
             inventoryButton = null;
             inventoryButtonComponent = null;
             inventoryCanvasGroup = null;
+            inventoryCardContainer = null;
             return;
         }
 
         Transform panel = root.Find("InventoryPanel");
         Transform button = root.Find("inventoryBtn");
-        Transform container = panel != null ? panel.Find("CardContainer") : null;
+
+        Transform container =
+            panel != null ? panel.Find("CardContainer") : null;
 
         if (panel == null || button == null || container == null)
         {
@@ -159,14 +173,16 @@ public class ItemsManager : MonoBehaviour
             return;
         }
 
-        inventoryCardContainer = container;
         inventoryPanel = panel.GetComponent<RectTransform>();
         inventoryButton = button.GetComponent<RectTransform>();
         inventoryButtonComponent = button.GetComponent<Button>();
         inventoryCanvasGroup = panel.GetComponent<CanvasGroup>();
+        inventoryCardContainer = container;
 
-        if (inventoryPanel == null || inventoryButton == null ||
-            inventoryButtonComponent == null || inventoryCanvasGroup == null)
+        if (inventoryPanel == null ||
+            inventoryButton == null ||
+            inventoryButtonComponent == null ||
+            inventoryCanvasGroup == null)
         {
             Debug.LogWarning(
                 "Missing components: " +
@@ -174,12 +190,13 @@ public class ItemsManager : MonoBehaviour
                 ", Button RectTransform = " + (inventoryButton != null) +
                 ", Button = " + (inventoryButtonComponent != null) +
                 ", CanvasGroup = " + (inventoryCanvasGroup != null)
-);
+            );
+
             return;
         }
 
-        // The editor positions are the intended OPEN panel and CLOSED button positions.
-        inventoryOpenPosition = inventoryPanel.anchoredPosition;
+        inventoryOpenPosition = inventoryPanel.anchoredPosition
+            + new Vector2(0f, 260f);
         inventoryButtonClosedPosition = inventoryButton.anchoredPosition;
 
         float slideDistance = inventoryPanel.rect.height + 30f;
@@ -210,40 +227,21 @@ public class ItemsManager : MonoBehaviour
         Debug.Log("Inventory UI found successfully!");
     }
 
-    public void GenerateInventoryCards()
-    {
-        LoadCardsPrefab();
-
-        foreach (TarotCardType cardType in ownedCards)
-        {
-            GameObject card = Instantiate(
-                shopCardPrefab,
-                inventoryCardContainer,
-                false
-            );
-            ShopCardUI cardUI = card.GetComponent<ShopCardUI>();
-            RectTransform rect = card.GetComponent<RectTransform>();
-            if (cardUI == null || rect == null)
-            {
-                Destroy(card);
-                continue;
-            }
-            cardUI.Setup(cardType, GetCardPrice(cardType));
-            rect.localScale = Vector3.one * 0.4f;
-        }
-
-        Debug.Log("Generated " + ownedCards.Count + " inventory cards.");
-    }
-
     public void ToggleInventory()
     {
-        if (isInventoryAnimating || inventoryPanel == null ||
-            inventoryButton == null || inventoryButtonComponent == null ||
+        if (isInventoryAnimating ||
+            inventoryPanel == null ||
+            inventoryButton == null ||
+            inventoryButtonComponent == null ||
             inventoryCanvasGroup == null)
             return;
 
+        if (!isInventoryOpen)
+        {
+            GenerateInventoryCards();
+        }
+
         StartCoroutine(AnimateInventory(!isInventoryOpen));
-        GenerateInventoryCards();
     }
 
     private IEnumerator AnimateInventory(bool opening)
@@ -273,7 +271,8 @@ public class ItemsManager : MonoBehaviour
             elapsed += Time.deltaTime;
 
             float t = Mathf.SmoothStep(
-                0f, 1f,
+                0f,
+                1f,
                 Mathf.Clamp01(elapsed / SLIDE_DURATION)
             );
 
@@ -298,6 +297,76 @@ public class ItemsManager : MonoBehaviour
         inventoryButtonComponent.interactable = true;
         isInventoryAnimating = false;
     }
+
+
+    public void GenerateInventoryCards()
+    {
+        if (inventoryCardContainer == null ||
+            inventoryCardPrefab == null ||
+            cardArtTable == null)
+            return;
+
+        // Clear previously generated cards.
+        for (int i = inventoryCardContainer.childCount - 1; i >= 0; i--)
+        {
+            Transform child = inventoryCardContainer.GetChild(i);
+            child.gameObject.SetActive(false);
+            Destroy(child.gameObject);
+        }
+
+        // Count copies of each card.
+        Dictionary<TarotCardType, int> cardCounts =
+            new Dictionary<TarotCardType, int>();
+
+        foreach (TarotCardType cardType in ownedCards)
+        {
+            if (!cardCounts.ContainsKey(cardType))
+                cardCounts[cardType] = 0;
+
+            cardCounts[cardType]++;
+        }
+
+        // Create one UI card for each unique card type.
+        foreach (var entry in cardCounts)
+        {
+            GameObject card = Instantiate(
+                inventoryCardPrefab,
+                inventoryCardContainer,
+                false
+            );
+
+            Image cardImage = card.GetComponent<Image>();
+
+            if (cardImage != null)
+            {
+                cardImage.sprite =
+                    cardArtTable.GetCardArt(entry.Key.GetName());
+
+                cardImage.preserveAspect = true;
+            }
+
+            // Update the quantity label.
+            Transform quantityObject = card.transform.Find("QuantityText");
+
+            if (quantityObject != null)
+            {
+                TMP_Text quantityText =
+                    quantityObject.GetComponent<TMP_Text>();
+
+                if (quantityText != null)
+                {
+                    quantityText.text = "×" + entry.Value;
+                    quantityText.gameObject.SetActive(entry.Value > 1);
+                }
+            }
+
+            RectTransform rect = card.GetComponent<RectTransform>();
+
+            if (rect != null)
+                rect.localScale = Vector3.one;
+        }
+    }
+
 
     public bool AddCard(TarotCardType cardType)
     {
@@ -475,10 +544,29 @@ public class ItemsManager : MonoBehaviour
 
             cardUI.Setup(cardType, GetCardPrice(cardType));
 
+            // Apply artwork from the shared CardArtTable.
+            if (cardArtTable != null)
+            {
+                Sprite artwork = cardArtTable.GetCardArt(
+                    cardType.GetName()
+                );
+
+                if (artwork != null)
+                {
+                    Image cardImage = card.transform
+                        .Find("CardImage")?.GetComponent<Image>();
+
+                    if (cardImage != null)
+                    {
+                        cardImage.sprite = artwork;
+                        cardImage.preserveAspect = true;
+                    }
+                }
+            }
+
             rect.anchorMin = new Vector2(0.5f, 0.5f);
             rect.anchorMax = new Vector2(0.5f, 0.5f);
 
-            // Centre three cards horizontally
             float x = (index - 1) * spacingX;
 
             rect.anchoredPosition = new Vector2(x, offsetY);
