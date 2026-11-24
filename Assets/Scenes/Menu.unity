@@ -2515,6 +2515,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6211d64e23cf2ee4899be9639032f9c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemsManager
+  startingItems: 0a000000
   cardArtTable: {fileID: 11400000, guid: 5d0b7c3e91a44f6a8c2e17b4f3a90d62, type: 2}
   inventoryCardPrefab: {fileID: 6190172743932960450, guid: 28bcea282e0697945a562ed2329e82ab, type: 3}
 --- !u!4 &781505776

@@ -17,6 +17,11 @@ public class ItemsManager : MonoBehaviour
 
     private List<TarotCardType> ownedCards = new List<TarotCardType>();
 
+    private List<ItemType> ownedItems = new List<ItemType>();
+
+    [Header("Items")]
+    [SerializeField] private List<ItemType> startingItems = new List<ItemType> { ItemType.CowboyHat };
+
     [Header("Card Artwork")]
     [SerializeField] private CardArtTable cardArtTable;
 
@@ -109,6 +114,9 @@ public class ItemsManager : MonoBehaviour
         AddCard(TarotCardType.TheMagician);
         AddCard(TarotCardType.TheHangedMan);
         AddCard(TarotCardType.WheelOfFortune);
+
+        foreach (ItemType item in startingItems)
+            AddItem(item);
 
         // Also support starting directly in the inventory scene.
         SetupInventory();
@@ -396,6 +404,25 @@ public class ItemsManager : MonoBehaviour
         return new List<TarotCardType>(ownedCards);
     }
 
+    public bool AddItem(ItemType itemType)
+    {
+        if (ownedItems.Contains(itemType))
+            return false;
+
+        ownedItems.Add(itemType);
+        return true;
+    }
+
+    public bool HasItem(ItemType itemType)
+    {
+        return ownedItems.Contains(itemType);
+    }
+
+    public List<ItemType> GetOwnedItems()
+    {
+        return new List<ItemType>(ownedItems);
+    }
+
     // ============================
     // SHOP PURCHASE METHODS
     // ============================
@@ -437,6 +464,44 @@ public class ItemsManager : MonoBehaviour
 
         Debug.Log(
             "Purchased " + cardType.GetName()
+            + " for " + price + " chips."
+        );
+
+        return true;
+    }
+
+    public bool BuyItem(ItemType itemType)
+    {
+        int price = itemType.GetPrice();
+
+        if (price <= 0)
+        {
+            Debug.LogWarning("Invalid item price.");
+            return false;
+        }
+
+        if (HasItem(itemType))
+        {
+            Debug.LogWarning("Already owns " + itemType.GetName());
+            return false;
+        }
+
+        if (ChipManager.Instance == null)
+        {
+            Debug.LogWarning("ChipManager not found!");
+            return false;
+        }
+
+        if (!ChipManager.Instance.SpendChips(price))
+        {
+            Debug.LogWarning("Not enough chips!");
+            return false;
+        }
+
+        AddItem(itemType);
+
+        Debug.Log(
+            "Purchased " + itemType.GetName()
             + " for " + price + " chips."
         );
 

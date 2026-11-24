@@ -6,7 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.Rendering.Universal;
 
-public class GameManager : MonoBehaviour
+public partial class GameManager : MonoBehaviour
 {
     private const string MENU_SCENE = "Menu";
     private const int HIGH_PRIESTESS_CARDS = 2;
@@ -103,13 +103,14 @@ public class GameManager : MonoBehaviour
 
         chipsRewarded = false;
         chipsEarned = 0;
+        chipBreakdownText = "";
         CreateStartingTarotCards();
         state.game.state = GameState.START;
         state.game.currentPoints = 0;
         state.game.pointsGoal = TransitionData.currentGoal;
         state.game.cardsSelected = new List<int>();
-        state.game.actionsRemaining = startingActions;
-        state.game.handsRemaining = startingHands;
+        state.game.actionsRemaining = GetStartingActions();
+        state.game.handsRemaining = GetStartingHands();
         state.handStart = new HandStartData{};
         InitHandStartData(ref state.handStart);
         UpdateDirtyZones();
@@ -141,7 +142,7 @@ public class GameManager : MonoBehaviour
             Debug.LogError("Chip manager is missing, you cant get Chips Michael Effed up");
             return;
         }
-        int reward = TransitionData.GetChipReward();
+        int reward = CalculateChipReward(out chipBreakdownText);
 
         ChipManager.Instance.RewardChips(reward);
 
@@ -1217,8 +1218,7 @@ public class GameManager : MonoBehaviour
                     case TurnStates.CALCULATE_HAND:
                         uiData.UI.DisableAllButtons();
                         uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
-                        int playerPoints = CalculateZonePoints(CardZone.PLAYER);
-                        string resultText = $"Hand Points: +{playerPoints}\n";
+                        CalculateHandScore(out string resultText);
                         SetAllCardsInZoneFaceDown(CardZone.PLAYER, false);
                         uiData.UI.UpdateMiddleText(resultText);
                         break;
@@ -1247,7 +1247,7 @@ public class GameManager : MonoBehaviour
                         $"YOU WIN!\n" +
                         $"Final Score: {state.game.currentPoints}\n" +
                         $"Difficulty: {TransitionData.currentDifficulty}\n" +
-                        $"+{chipsEarned} Chips Earned!"
+                        $"+{chipsEarned} Chips Earned!{chipBreakdownText}"
                     );
                 }
                 else
@@ -1482,7 +1482,7 @@ public class GameManager : MonoBehaviour
                     case TurnStates.CALCULATE_HAND:
                         if (Time.time >= state.game.waitUntil) {
                             state.game.handsRemaining--;
-                            state.game.currentPoints += CalculateZonePoints(CardZone.PLAYER);
+                            state.game.currentPoints += CalculateHandScore(out _);
                             uiData.dirty = true;
                             if (state.game.currentPoints >= state.game.pointsGoal) {
                                 // calls the chip reward function
@@ -1495,7 +1495,7 @@ public class GameManager : MonoBehaviour
                                     DiscardAllCardsInZone(CardZone.PLAYER);
                                     DrawCards(CardZone.PLAYER, 5);
                                     state.game.state = GameState.START;
-                                    state.game.actionsRemaining = startingActions;
+                                    state.game.actionsRemaining = GetStartingActions();
                                     InitHandStartData(ref state.handStart);
                                     uiData.dirty = true;
                                 }
