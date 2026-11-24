@@ -33,13 +33,15 @@ public class ItemsManager : MonoBehaviour
     private RectTransform inventoryPanel;
     private RectTransform inventoryButton;
     private Button inventoryButtonComponent;
+
+    private TMPro.TMP_Text inventoryButtonText;
     private CanvasGroup inventoryCanvasGroup;
 
     private Vector2 inventoryOpenPosition;
     private Vector2 inventoryClosedPosition;
     private Vector2 inventoryButtonClosedPosition;
     private Vector2 inventoryButtonOpenPosition;
-
+    private TMPro.TMP_Text InventoryBtnText;
     private bool isInventoryOpen = false;
     private bool isInventoryAnimating = false;
 
@@ -157,6 +159,8 @@ public class ItemsManager : MonoBehaviour
 
     public void SetupInventory()
     {
+      
+
         Transform root = FindSceneObject("inventoryRoot");
 
         if (root == null)
@@ -184,6 +188,10 @@ public class ItemsManager : MonoBehaviour
         inventoryPanel = panel.GetComponent<RectTransform>();
         inventoryButton = button.GetComponent<RectTransform>();
         inventoryButtonComponent = button.GetComponent<Button>();
+
+        inventoryButtonText = button.GetComponentInChildren<TMPro.TMP_Text>();
+        inventoryButtonText.text = "Inventory";
+
         inventoryCanvasGroup = panel.GetComponent<CanvasGroup>();
         inventoryCardContainer = container;
 
@@ -204,17 +212,21 @@ public class ItemsManager : MonoBehaviour
         }
 
         inventoryOpenPosition = inventoryPanel.anchoredPosition
-            + new Vector2(0f, 260f);
+            + new Vector2(0f, -250f);
         inventoryButtonClosedPosition = inventoryButton.anchoredPosition;
 
-        float slideDistance = inventoryPanel.rect.height + 30f;
+        float slideDistance = inventoryPanel.rect.height + 0f;
+
+
 
         inventoryClosedPosition =
-            inventoryOpenPosition + Vector2.down * slideDistance;
+            inventoryOpenPosition + Vector2.up * slideDistance;
 
         inventoryButtonOpenPosition =
-            inventoryButtonClosedPosition +
-            Vector2.up * (slideDistance + TELLER_EXTRA_HEIGHT);
+            inventoryButtonClosedPosition;
+            //+ Vector2.down * (slideDistance + TELLER_EXTRA_HEIGHT);
+
+
 
         inventoryPanel.anchoredPosition = inventoryClosedPosition;
         inventoryButton.anchoredPosition = inventoryButtonClosedPosition;
@@ -301,6 +313,7 @@ public class ItemsManager : MonoBehaviour
         inventoryCanvasGroup.alpha = opening ? 1f : 0f;
         inventoryCanvasGroup.interactable = opening;
         inventoryCanvasGroup.blocksRaycasts = opening;
+        inventoryButtonText.text = opening ? "Close Inventory" : "Inventory";
 
         inventoryButtonComponent.interactable = true;
         isInventoryAnimating = false;
