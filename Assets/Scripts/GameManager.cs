@@ -8,7 +8,8 @@ using UnityEngine.Rendering.Universal;
 
 public partial class GameManager : MonoBehaviour
 {
-    private const string MENU_SCENE = "Menu";
+    private const string MENU_SCENE = "MainMenu";
+    private const string SHOP_SCENE = "Shop";
     private const int HIGH_PRIESTESS_CARDS = 2;
     private const int STAR_CARDS = 3;
     private int handRevealCount; // How many hand cards the active High Priestess / Star reveals.
@@ -436,6 +437,16 @@ public partial class GameManager : MonoBehaviour
         return state.game.cardsSelected.Count >= GetHandRevealTarget();
     }
 
+    private void ContinueRun() {
+        if (!RunData.IsActive) {
+            SceneManager.LoadScene(MENU_SCENE);
+            return;
+        }
+
+        RunData.AdvanceTable();
+        SceneManager.LoadScene(SHOP_SCENE);
+    }
+
     private void ConfirmSelection() {
         if (state.game.state == GameState.START
             && state.handStart.state == HandStartState.WAITING_FOR_PLAYER_SELECTION
@@ -571,7 +582,11 @@ public partial class GameManager : MonoBehaviour
             case ButtonCommands.CONFIRM:
                 ConfirmSelection();
                 break;
+            case ButtonCommands.CONTINUE:
+                ContinueRun();
+                break;
             case ButtonCommands.MAIN_MENU:
+                RunData.EndRun();
                 SceneManager.LoadScene(MENU_SCENE);
                 break;
             case ButtonCommands.EXIT:
@@ -1257,13 +1272,18 @@ public partial class GameManager : MonoBehaviour
                 //    break;
         
                 bool playerWon = state.game.currentPoints >= state.game.pointsGoal;
+                bool continueRun = playerWon && RunData.IsActive && !RunData.IsLastTable;
+                bool runComplete = playerWon && RunData.IsActive && RunData.IsLastTable;
+                string tableLine = RunData.IsActive
+                    ? RunData.GetTable(RunData.CurrentTable).name
+                    : $"Difficulty: {TransitionData.currentDifficulty}";
 
                 if (playerWon)
                 {
                     uiData.UI.UpdateMiddleText(
-                        $"YOU WIN!\n" +
+                        $"{(runComplete ? "RUN COMPLETE!" : "YOU WIN!")}\n" +
                         $"Final Score: {state.game.currentPoints}\n" +
-                        $"Difficulty: {TransitionData.currentDifficulty}\n" +
+                        $"{tableLine}\n" +
                         $"+{chipsEarned} Chips Earned!{chipBreakdownText}"
                     );
                 }
@@ -1276,8 +1296,9 @@ public partial class GameManager : MonoBehaviour
                     );
                 }
 
-                uiData.UI.EnableMainMenuButton(true);
-                uiData.UI.EnableExitButton(true);
+                uiData.UI.EnableContinueButton(continueRun);
+                uiData.UI.EnableMainMenuButton(!continueRun);
+                uiData.UI.EnableExitButton(!continueRun && !runComplete);
 
                 break;
         }

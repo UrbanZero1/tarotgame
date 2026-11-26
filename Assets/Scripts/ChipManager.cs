@@ -17,13 +17,20 @@ public class ChipManager : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            CurrentChips = PlayerPrefs.GetInt(ChipsSAVE, 0);
+            CurrentChips = 0;
         }
         else
         {
             Destroy(gameObject);
         }
     }
+    public void ResetChips()
+    {
+        CurrentChips = 0;
+        ChipTotalSave();
+        ChipsUpdate?.Invoke(CurrentChips);
+    }
+
     // Reward for winning, specifying the ammount per level of difficulty
     public void RewardChips(int amount)
     {

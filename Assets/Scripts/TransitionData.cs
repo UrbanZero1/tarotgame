@@ -17,7 +17,12 @@ public static class TransitionData
 
     public static int GetChipReward()
     {
-        switch (currentDifficulty)
+        return GetChipReward(currentDifficulty);
+    }
+
+    public static int GetChipReward(GameDifficulty difficulty)
+    {
+        switch (difficulty)
          {
              case GameDifficulty.Easy:
                 return 300;

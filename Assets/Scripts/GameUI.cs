@@ -18,6 +18,7 @@ public class GameUI : MonoBehaviour {
     [FormerlySerializedAs("restartButton")] [SerializeField] private Button mainMenuButton;
     [SerializeField] private Button exitButton;
     [SerializeField] private Button confirmButton;
+    [SerializeField] private Button continueButton;
     [Header("Magician Suit Buttons")]
     [SerializeField] private Button suitHeartsButton;
     [SerializeField] private Button suitDiamondsButton;
@@ -42,6 +43,8 @@ public class GameUI : MonoBehaviour {
         exitButton.onClick.AddListener(() => OnButtonClicked(ButtonCommands.EXIT));
         AddSuitListener(confirmButton, ButtonCommands.CONFIRM);
         EnableConfirmButton(false);
+        AddSuitListener(continueButton, ButtonCommands.CONTINUE);
+        EnableContinueButton(false);
         AddSuitListener(suitHeartsButton, ButtonCommands.SUIT_HEARTS);
         AddSuitListener(suitDiamondsButton, ButtonCommands.SUIT_DIAMONDS);
         AddSuitListener(suitClubsButton, ButtonCommands.SUIT_CLUBS);
@@ -118,6 +121,10 @@ public class GameUI : MonoBehaviour {
         SetButtonActive(confirmButton, enable);
     }
 
+    public void EnableContinueButton(bool enable) {
+        SetButtonActive(continueButton, enable);
+    }
+
     public void DisableAllButtons() {
         drawButton.gameObject.SetActive(false);
         playTarotButton.gameObject.SetActive(false);
@@ -127,6 +134,7 @@ public class GameUI : MonoBehaviour {
         mainMenuButton.gameObject.SetActive(false);
         exitButton.gameObject.SetActive(false);
         EnableConfirmButton(false);
+        EnableContinueButton(false);
         EnableSuitButtons(false);
     }
 

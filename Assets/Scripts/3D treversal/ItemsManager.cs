@@ -19,7 +19,8 @@ public class ItemsManager : MonoBehaviour
 
     private List<ItemType> ownedItems = new List<ItemType>();
 
-    [Header("Items")]
+    [Header("Testing")]
+    [SerializeField] private bool grantTestInventory = false;
     [SerializeField] private List<ItemType> startingItems = new List<ItemType> { ItemType.CowboyHat };
 
     [Header("Card Artwork")]
@@ -112,13 +113,16 @@ public class ItemsManager : MonoBehaviour
 
     private void Start()
     {
-        AddCard(TarotCardType.WheelOfFortune);
-        AddCard(TarotCardType.TheMagician);
-        AddCard(TarotCardType.TheHangedMan);
-        AddCard(TarotCardType.WheelOfFortune);
+        if (grantTestInventory)
+        {
+            AddCard(TarotCardType.WheelOfFortune);
+            AddCard(TarotCardType.TheMagician);
+            AddCard(TarotCardType.TheHangedMan);
+            AddCard(TarotCardType.WheelOfFortune);
 
-        foreach (ItemType item in startingItems)
-            AddItem(item);
+            foreach (ItemType item in startingItems)
+                AddItem(item);
+        }
 
         // Also support starting directly in the inventory scene.
         SetupInventory();
@@ -142,7 +146,7 @@ public class ItemsManager : MonoBehaviour
         if (scene.name != "Shop")
             return;
 
-        StartCoroutine(InitializeShelf());
+        new GameObject("ShopController").AddComponent<ShopController>();
     }
 
     private IEnumerator InitializeShelf()
@@ -415,6 +419,12 @@ public class ItemsManager : MonoBehaviour
     public List<TarotCardType> GetOwnedCards()
     {
         return new List<TarotCardType>(ownedCards);
+    }
+
+    public void ResetInventory()
+    {
+        ownedCards.Clear();
+        ownedItems.Clear();
     }
 
     public bool AddItem(ItemType itemType)
