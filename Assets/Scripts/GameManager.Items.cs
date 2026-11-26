@@ -267,7 +267,50 @@ public partial class GameManager
         return amount >= 0 ? $"+{amount}" : amount.ToString();
     }
 
-    private int CalculateHandScore(out string breakdown) {
+
+    private void ShowCardScores(ScoredCard[] cards)
+    {
+        if (scorePopupPrefab == null) return;
+
+        foreach (ScoredCard card in cards)
+        {
+            if (cardVisuals[card.cardId] == null) continue;
+
+            Vector3 position = cardVisuals[card.cardId].transform.position;
+            position += scorePopupOffset;
+
+            GameObject popup = Instantiate(
+                scorePopupPrefab,
+                position,
+                scorePopupPrefab.transform.rotation
+            );
+
+            popup.GetComponent<TMPro.TMP_Text>().text =
+                FormatSigned(card.value);
+
+            Destroy(popup, 2f);
+        }
+    }
+
+    private void ShowTotalScore(int total)
+    {
+        if (scorePopupPrefab == null) return;
+
+        GameObject popup = Instantiate(
+            scorePopupPrefab,
+            totalScorePosition.position,
+            scorePopupPrefab.transform.rotation
+        );
+
+        popup.GetComponent<TMPro.TMP_Text>().text =
+            $"Total: {FormatSigned(total)}";
+
+        popup.transform.localScale *= 1.2f;
+
+        //Destroy(popup, 2f);
+    }
+
+    private int CalculateHandScore(out string breakdown, bool showPopups = false) {
         int cardPoints = CalculateZonePoints(CardZone.PLAYER);
         int total = cardPoints;
         ScoredCard[] cards = BuildScoredCards(CardZone.PLAYER);
@@ -291,6 +334,14 @@ public partial class GameManager
         breakdown = itemLines.Length == 0
             ? $"Hand Points: +{cardPoints}\n"
             : $"Hand Points: +{cardPoints}\n{itemLines}Total: {FormatSigned(total)}";
+
+
+        if (showPopups && !scorePopupsShown)
+        {
+            scorePopupsShown = true;
+            ShowCardScores(cards);
+            ShowTotalScore(total);
+        }
 
         return total;
     }

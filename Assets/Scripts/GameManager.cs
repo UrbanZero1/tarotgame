@@ -40,6 +40,14 @@ public partial class GameManager : MonoBehaviour
     [SerializeField] private GameObject cardPrefab;
     [SerializeField] private GameObject tarotCardPrefab;
 
+
+    [Header("Scoring Visuals")]
+    [SerializeField] private Transform totalScorePosition;
+    [SerializeField] private GameObject scorePopupPrefab;
+    [SerializeField] private Vector3 scorePopupOffset =
+    new Vector3(0f, 1f, 0f);
+    private bool scorePopupsShown = false;
+
     [Header("UI Object")] 
     [SerializeField] GameObject uiObject;
 
@@ -549,11 +557,23 @@ public partial class GameManager : MonoBehaviour
                 uiData.dirty = true;
                 break;
             case ButtonCommands.PLAY_TAROT:
+                if (state.zones[(int)CardZone.TAROT].count == 0)
+                    break;
+
                 state.game.actionsRemaining--;
                 state.game.turnState = TurnStates.PLAY_TAROT;
                 state.game.cardsSelected.Clear();
                 uiData.dirty = true;
                 break;
+            //used to soft block players if they dont own any tarot cards,
+            //but now we just hide the button in that case 
+            //case ButtonCommands.PLAY_TAROT:
+            //    state.game.actionsRemaining--;
+            //    state.game.turnState = TurnStates.PLAY_TAROT;
+            //    state.game.cardsSelected.Clear();
+            //    uiData.dirty = true;
+            //    break;
+
             case ButtonCommands.DISCARD:
                 state.game.turnState = TurnStates.DISCARD;
                 uiData.dirty = true;
@@ -1202,7 +1222,9 @@ public partial class GameManager : MonoBehaviour
                         uiData.UI.UpdateMiddleText("Select an action");
                         uiData.UI.EnableDrawButton(true);
                         uiData.UI.EnablePassButton(true);
-                        uiData.UI.EnablePlayTarotButton(true);
+                        //uiData.UI.EnablePlayTarotButton(true);
+                        uiData.UI.EnablePlayTarotButton(
+                            state.zones[(int)CardZone.TAROT].count > 0);
                         break;
                     case TurnStates.PLAY_TAROT:
                         uiData.UI.DisableAllButtons();
@@ -1250,7 +1272,7 @@ public partial class GameManager : MonoBehaviour
                     case TurnStates.CALCULATE_HAND:
                         uiData.UI.DisableAllButtons();
                         uiData.UI.UpdateHandsRemainingText($"{state.game.handsRemaining}");
-                        CalculateHandScore(out string resultText);
+                        CalculateHandScore(out string resultText, showPopups: true);
                         SetAllCardsInZoneFaceDown(CardZone.PLAYER, false);
                         uiData.UI.UpdateMiddleText(resultText);
                         break;
@@ -1509,6 +1531,7 @@ public partial class GameManager : MonoBehaviour
                     case TurnStates.END:
                         uiData.dirty = true;
                         if (state.game.actionsRemaining < 1 || state.game.hasPassed) {
+                            scorePopupsShown = false;
                             state.game.turnState = TurnStates.CALCULATE_HAND;
                             state.game.waitUntil = Time.time + 2f;
                             state.game.hasPassed = false;

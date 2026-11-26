@@ -78,7 +78,7 @@ public class GameUI : MonoBehaviour {
     }
     
     public void UpdatePlayerPointsText(string text) {
-        playerPointsText.text = text;
+        playerPointsText.text = $"Score: {text}";
     }
     
     public void UpdateHandsRemainingText(string text) {
