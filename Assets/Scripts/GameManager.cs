@@ -29,6 +29,9 @@ public partial class GameManager : MonoBehaviour
     [SerializeField] private float cardFlipAnimationDuration = 0.3f;
     [SerializeField] private float cardFlipAnimationStagger = 0.08f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClip singleCardDealClip;
+
 
     [Header("Zone Views")]
     [SerializeField] private ZoneView[] zoneViews;
@@ -724,6 +727,8 @@ public partial class GameManager : MonoBehaviour
                 startPosition = startPosition,
                 targetPosition = startPosition,
             });
+
+            StartCoroutine(PlayCardDealSound(cardDrawAnimationStagger * i));
         }
 
         UpdateDirtyZones();
@@ -737,6 +742,18 @@ public partial class GameManager : MonoBehaviour
 
         if (moves.Count > 0)
             StartCoroutine(AnimateCardMoves(moves));
+    }
+
+    private IEnumerator PlayCardDealSound(float delay) {
+        if (delay > 0f)
+            yield return new WaitForSeconds(delay);
+
+        if (SoundFXManager.instance == null) yield break;
+
+        FindZoneView(CardZone.DECK, out ZoneView deckView);
+        SoundFXManager.instance.PlaySound(
+            singleCardDealClip,
+            deckView.anchor != null ? deckView.anchor : transform);
     }
 
     private IEnumerator PlaySelectionReveal() {
